@@ -22,7 +22,7 @@ Currently the Generator generates just *.md files for further manual editing (th
 * Ai support for spellchecking and recommendations
 
 ### Planned
-Ai driven highlighting of skills and experiences upon job offer requirements with a button to automatically switch on/off relevant/irrelevant items. 
+Ai driven highlighting of skills and experiences upon job offer requirements with a button to automatically switch on/off relevant/irrelevant     items. 
 
 
 
