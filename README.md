@@ -25,6 +25,8 @@ Currently the ApplaiGenerator generates just *.md files for further manual editi
 ### Planned
 Ai-driven highlighting of skills and experiences upon job offer requirements with a button to automatically switch on/off relevant/irrelevant     items. 
 
+## Project Configuration 
+
 
 ## Folder Structure
 * 
