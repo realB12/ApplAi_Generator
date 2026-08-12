@@ -1,18 +1,19 @@
-# ApplAi :: The Generator
+# ApplaiGenerator :: Generating Job Application Artefacts from a MasterCV
 
 This locally running BrowserApp **generates job application artefacts** from a given in JobOffer.PDF and a MasterCV.JSON file. 
 
-You can create your **MasterCV.JSON** file with the free **[Reactive Resume v5 and higher](https://rxresu.me/) Resume Creator App** from where the CV-data can be exported as a JSON-file you want to rename as "MasterCV.JSON". 
+You can create your **MasterCV.JSON** file with the free **[Reactive Resume v5 and higher](https://rxresu.me/) Resume Creator App** from where the CV-data then will be exported as the bespoke "MasterCV.JSON"-file. 
 
-Create the **JobOffer.PDF** by inserting the Job Offer URL into the AppliAI Agent that will copy the job-offer into a GitHub hosted PDF. 
-
+You can crate the **JobOffer.PDF** by inserting the Job Offer URL into the [ApplaiScraper Agent]() that will copy the job-offer into a GitHub hosted PDF - or alternatively you create a PDF from the web-published Job-Offer with your own tools or AI.  
 
 ## Features
 
-## Current Features
-Currently the App displays a a tree of the given in CV's skills and experiences the user can individually activate/deactivate for whether they will appear in final joboffer specific CV-fieles. 
+### Current Features
+Currently the App displays a a tree of the given in CV's skills and experiences. 
 
-Currently the Generator generates just *.md files for further manual editing (that when final will be manually compiled into PDFs using the Markdown monster's PDF-export function). 
+From within this tree, the user can individually activate/deactivate those items for appearance in the final joboffer-specific jop-application artefacts. 
+
+Currently the ApplaiGenerator generates just *.md files for further manual editing (me personally I am using WestWind0s "Markdown Monster"-Editor that finally allows me to export the files in *.pdf and/or *.docx format.)
 
 ### Next Features
 * manually editing activated items with versioning-carousel (moving back and forth versions with the click of a button). 
@@ -22,10 +23,11 @@ Currently the Generator generates just *.md files for further manual editing (th
 * Ai support for spellchecking and recommendations
 
 ### Planned
-Ai driven highlighting of skills and experiences upon job offer requirements with a button to automatically switch on/off relevant/irrelevant     items. 
+Ai-driven highlighting of skills and experiences upon job offer requirements with a button to automatically switch on/off relevant/irrelevant     items. 
 
 
-
+## Folder Structure
+* 
 ## Project Configuration 
 
 
