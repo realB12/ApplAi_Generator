@@ -1,0 +1,2 @@
+# KIMI specific folder for Context and Prompts
+This folder contains whatever an AI vibecoding session needs to be initially launched (MVP-Session) and then subsequently add additional features or fix/change/improve/diversify/secure the current code (be reminded that we will most probably always start with a new session because the built in AI-memory mechanisms have a dentency to accumulate irrelevant bloat that makes next iterations fuzzy, slow and expensive).  
