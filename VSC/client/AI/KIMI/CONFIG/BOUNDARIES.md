@@ -1,41 +1,5 @@
 # BOUNDARIES.md :: SPECificiation TEMPLATE for KIMI AI
 
-## Metadata
----
-AI: Do not use this "MetaData"-section for AI generation! It is is for human, internal use only. Start reading the document at the "1. Product Vision"-section!
-
----
-### Purpose
-The BOUNDARIES.md file **tells the AI what NOT TO INCLUDE or USE** when generating stuff. It provided explicit constraints, guardrails, and anti-patterns. When in doubt, check this file.
-
-### How to GENERATE this file
-This file is seldem created manually. Its a much better way to ask the KI to draft a version for the Application you have already specified with your [VISION](VISION_template.md), [SPEC ](SPEC_template.md) and [TECH](TECH.md)-files. 
-
-Creating this file manually is not only the beyond the horizon of a non-system-architect but might unnecessarily cause the AI to ignore the best solution for your problem. 
-
-So its better to get it generate from what the AI has found best for your solution (selecting the most up to date methodology, libraries, tools, processings and technologies you might not even be aware of).
-
-Then go through it and replace the things you do not want or you will need an alternative for a well specified reason (gutt feeling and sticking with old plumbing is not a good advice). 
-
-### Authoring Information
-**Doc-Owner**: rene.baron@baronsolutions.ch
-**Last Doc update**: August 13th, 2026
-**Version**: 0.1
-**Next review scheduled**: - 
-
----
-
-### Context
-* This template is **based on the [SPEC template](../../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/SPEC_template.md)** of the [KIMI Project Configuration File TEMPLATE Collection](../../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/KIMI%20Project%20Configuration%20Files.md)
-
-### Links
-* [KIMI Project Configuration Files: an **Overview**](../KIMI%20Project%20Configuration%20Files.md)
-
-### Purpose and how this document shall be used
-The **Purpose** of the BOUNDARIES.md is to limit the AI to something you know and you can control, or at least someting you may look up before using and where you have to make sure, that you can maintain it as well. Further this file must reflect your organisation's technology best practices and guidelines. When you are for instance a Microsoft Shop, you are a Microsoft Shop and not Apple, Google or Unix through the Backdoor Garage ;-)
-
-The BOUNDARIES.md should be stable not only for this projects but for all projects to come, so that your organisation's tech stack remains somehow manageable. 
-
 ## 1. Technology Boundaries
 ### ✅ Allowed Dependencies
 These may be used freely (already in package.json):
