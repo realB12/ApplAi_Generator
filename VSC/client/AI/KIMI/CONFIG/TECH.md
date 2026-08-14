@@ -2,6 +2,16 @@
 
 * -> this document is based on [TECH template](../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/TECH_template.md)
 
+## Architectural Overiew
+┌─────────────────┐      HTTP/REST      ┌──────────────────┐
+│   Vite + TS     │ ◄─────────────────► │ ASP.NET Core 9   │
+│   (SPA)         │                     │ Minimal API      │
+│                 │                     │                  │
+│ • Tree View     │                     │ • Gist Reader    │
+│ • Node Edit/DnD │                     │ • Markdown Export│
+│ • Selection     │                     │ • GitHub PAT     │
+└─────────────────┘                     └──────────────────┘
+
 ## 1. TECH Stack
 
 | Layer               | Technology            | Version | Rationale                                     |
@@ -21,8 +31,9 @@
 | Testing (E2E)       | Playwright            | 1.49+   | Cross-browser, reliable                       |
 | Icons               | Lucide React          | latest  | Consistent, tree-shakeable                    |
 | Date Handling       | date-fns              | 4.x     | Modular, immutable                            |
-| HTTP Client         | Fetch API             | native  | No extra dependency   
-|IDE         | Visual Studio Code (VSC)       | latest  | No extra dependency |
+| HTTP Client         | Fetch API             | native  | No extra dependency                           |
+| IDE                 | VS Code    | latest  | No extra dependency                           |
+| TreeView Component  | Visual Studio Code (VSC)      | latest  | No extra dependency                   |
 
 ## 2. Project Structure
 The following project structure is already given / mandatory on https://github.com/realB12/ApplAi_Generator/tree/main. You can add more folders and files but never delete/change the mentioned below!
@@ -73,11 +84,13 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 └─ README.md
 ```
 
-Special folders for You
+The only folder AI is allowed to touch are the following: 
 
-All vibecoded SourceCode must go into the 
+1. **/SRC**: All vibecoded **SourceCode** goes into https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/SRC
 
+2. **/AI/KIMI/CONFIG**: **All AI Context** is found and must be loaded from https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/AI/KIMI/CONFIG
 
+All other folder must not be touched by AI agents or other forms of genrative processings! 
 
 ## 3. Data Model
 
@@ -125,7 +138,6 @@ interface User {
 * Optimistic updates: Only for low-risk actions (toggle, like)
 * Pagination: Cursor-based preferred, offset as fallback
 
-
 ### Client State
 
 **Global store slices:**
@@ -152,7 +164,7 @@ Rule: Server state never goes into Zustand. Use TanStack Query for all API data.
 | First Contentful Paint (FCP)   | < 1.0s   | < 1.5s   |
 | Largest Contentful Paint (LCP) | < 2.0s   | < 2.5s   |
 | Time to Interactive (TTI)      | < 3.0s   | < 4.0s   |
-| Total Bundle Size (initial)    | < 200 KB | < 300 KB |
+| Total Bundle Size (initial)    | < 500 KB | < 800 KB |
 | Lighthouse Performance         | > 90     | > 80     |
 ```
 ### Enforcement:
@@ -197,9 +209,9 @@ Rule: Server state never goes into Zustand. Use TanStack Query for all API data.
 **Rule**: Never commit .env.local. Use .env.example as template.
 
 ## 10. Decision Log
-```plaintext
-| Date    | Decision                             | Context | Alternatives Rejected                         |
+
+| Date    | Decision                             | why | Alternatives Rejected                         |
 | ------- | ------------------------------------ | ------- | --------------------------------------------- |
-| \[DATE] | \[FILL IN: e.g., Zustand over Redux] | \[Why?] | \[Redux: too much boilerplate for this scope] |
-| \[DATE] | \[FILL IN: e.g., No SSR / SPA only]  | \[Why?] | \[Next.js: overkill for dashboard-only app]   |
-```
+| 2026-08-14 | Zustand over Redux | simplicity | Redux: too much boilerplate for this scope |
+| 2026-08-14 | No SSR / SPA only  | simplicity | Next.js: overkill for dashboard-only app   |
+| 2026-08-14 | Vite over Blazor   | dev-speed   | BLAZOR: The Vite+TS approach keeps compile times faster than Blazor WASM AOT while giving you full control over the DOM tree.   |
