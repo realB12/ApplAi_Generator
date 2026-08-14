@@ -31,3 +31,12 @@ AI.KIMI/
 ## How to use those configuration files
 Rather than editing or loading them manually into the AI,  we set them up in the app's Source Repo, so that in the AI prompt we can simmply tell the AI where to find them. 
 
+## Specification History
+
+### SPEC.md
+#### Current version
+The current SPEC.md is the KIMI generated Spec from the [05_Specs for the Login Form](../PROMPTs/00-09/05_Specs%20for%20the%20Login%20Form.md) Prompt with the Specifications added for the S002 Main screen. 
+This version seems quite complete and ready for implementation. 
+
+#### MANUAL Version
+

@@ -1,7 +1,20 @@
-# SPEC.md :: SPECificiation TEMPLATE for KIMI AI
+# SPEC_MANUAL.md :: manually creted SPECificiation for KIMI AI 
 
+* This Spec was originally generated from the [SPEC template](../../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/SPEC_template.md)**
 
-* -> generated from the [SPEC template](../../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/SPEC_template.md)**
+* It then has been used  as input for the generation of the final [SPEC](../../SPEC.md)
+
+## Key Lessons Learned
+Do not write the SPEC.md yourself! Get it generated from AI. 
+
+Although this version was generated with the [01_EVAL_Best DevStack for ApplaiGenerator ](../../../PROMPTs/00-09/01_EVAL_Best%20DevStack%20for%20ApplaiGenerator%20.md) Prompt I have found that I was not clear on the Authentication part, which I wanted afterwards to be State of the Art. 
+
+Thefore the more generic [05_Specs for the Login Form](../../../PROMPTs/00-09/05_Specs%20for%20the%20Login%20Form.md) with a focus on the Authenticaton panel turned out to be the better candidae for the MVP. Then just adding the Specs for the MainScreen was just a breeze. 
+
+Do not try to early write the Specs in the detail and format the AI will write the Specs. Stay Generic. Just describe what you want. Using explicite Screennames such as "S001", "S002" and "SMSG" of generic Message Popups helps a lot to stay focused. 
+
+Describing then every Screen creates a  good structure for prompting the SPEC.md.
+
 
 ## 1. Feature Overview
 | ID            | Feature                     | PRIO | STAT | Depends On |
