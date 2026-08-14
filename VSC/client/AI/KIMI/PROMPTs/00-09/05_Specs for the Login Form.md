@@ -1,3 +1,21 @@
+# Creating the SPEC.md 
+
+This Prompt has generated the final [SPEC](../../CONFIG/SPEC.md) in a detail that would have taken me days to compile manually!
+
+## Key Lessons Learned
+Do not write the SPEC.md yourself! Get it generated from AI. 
+
+Although this version was generated with the [01_EVAL_Best DevStack for ApplaiGenerator ](../../../PROMPTs/00-09/01_EVAL_Best%20DevStack%20for%20ApplaiGenerator%20.md) Prompt I have found that I was not clear on the Authentication part, which I wanted afterwards to be State of the Art. 
+
+Thefore the more generic [05_Specs for the Login Form](../../../PROMPTs/00-09/05_Specs%20for%20the%20Login%20Form.md) with a focus on the Authenticaton panel turned out to be the better candidae for the MVP. Then just adding the Specs for the MainScreen was just a breeze. 
+
+Do not try to early write the Specs in the detail and format the AI will write the Specs. Stay Generic. Just describe what you want. Using explicite Screennames such as "S001", "S002" and "SMSG" of generic Message Popups helps a lot to stay focused. 
+
+Describing then every Screen creates a  good structure for prompting the SPEC.md.
+
+
+## The Prompt
+
 Give me the spec.md for building a state of the art top secure Welcome Screen / Landing Page ("S000") with a Login PopUp displayed ("S001") of a secure Single Page Application which, when filled in right, navigates to the MAIN-Screen ("S002"). 
 
 For every Screen give me a short description of the Labels, Input-fields and Buttons with their function. 
@@ -82,3 +100,6 @@ Write the ScreenNumbers "S001", "S002" etc into the top left corner of every scr
 
 ### Error Messages
 Have a consistent concept/pattern about how to display error and warning messages in a PopUp (Use international best practices for this standard)
+
+----
+
