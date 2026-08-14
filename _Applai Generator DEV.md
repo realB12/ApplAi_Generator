@@ -2,6 +2,9 @@
 
 -> [README](README.md)
 
+* This folder is replicated to [GitHub]()
+
+
 Contains the Specs, (AI)-Coinfiguration Files, Prompts, Logs, Development Guidelines and Sourcecode for the two major components of the overall [Applai](../../_ApplAI%20personal%20Job%20Application%20and%20Management%20Solution.md) solution: 
 
 1. [Applai **JobScraper**](../S01_SCRAPER/_ApplAI_JobScraper.md) that compiles a copy of the original JobOffer Website in PDF, MD and JSON format. 
