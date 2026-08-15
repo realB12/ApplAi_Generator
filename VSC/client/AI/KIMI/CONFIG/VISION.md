@@ -3,6 +3,11 @@
 ## 1. Product Vision
 Compile a job-offer specific Resumee.md and CoverLetter.md from a given in GIT hosted JSON file e.g. "MasterResume.json" (that contains ALL skills, expertises, base data typical for resumes) and a JobOffer description file in PDF format with a focus on matching the content to what is required by the job-offer. 
 
+### Scope of MVP version
+For a first MVP we are just loading the MasterResume.json from a GIST (a user can configure its URL in the settings), modify it and save the such modified Resume back to the GIST under a new name such as "myGeneratedCV.json". 
+
+The core component is displayin the loaded JSON file in an editable and collapsible TreeView where Nodes can be selected/deselected for include them in or exclude them from the new to be generated "myGeneratedCV.json". 
+
 ## 2. Target Audience
 | Segment   | Description | Tech Savviness         | Primary Device             |
 | --------- | ----------- | ---------------------- | -------------------------- |
@@ -43,5 +48,5 @@ Compile a job-offer specific Resumee.md and CoverLetter.md from a given in GIT h
 * English language and date format is enough. No Internationalisation is required. 
 
 ## 6. Competitive Differentiation
-By using the best tree-view component for selecting and editing the MasterResume.json file the user is super efficient to compile a Resume that is reduced to what is really relevant for the job-application.  
+By using the best tree-view component for selecting and editing the MasterResume.json file the user is super efficient to compile a joboffer specific/relevant Resume from a MasterResume Template that is reduced to what is really relevant for the job-application.  
 
