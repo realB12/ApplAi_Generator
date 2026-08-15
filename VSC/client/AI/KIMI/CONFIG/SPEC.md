@@ -168,6 +168,7 @@
 | Password Error | `s001-password-error` | Span | Inline error text | Hidden by default. Shows: *"Password must be at least 12 characters."* |
 | Remember Me | `s001-remember` | Checkbox | Label: "Remember me for 7 days" | Default: **unchecked**. If checked, refresh token TTL extends to 30 days. |
 | Sign In Button | `s001-submit` | Button | "Sign In" | Primary style. Disabled state during API call. Shows spinner inside button during loading. |
+| Exit Button | `s001-exit` | Button | "EXIT" | Secondary style. Closes the entire application after confirmation. No pending transactions are waited for. |
 | Forgot Password | `s001-forgot` | Link | "Forgot password?" | Text link, accent color. Opens password reset flow (SMSG info: *"Check your email for reset instructions."*) |
 | CAPTCHA Container | `s001-captcha` | Div | — | Invisible until triggered by rate limit. |
 
@@ -184,6 +185,7 @@
 | **Login Failure (5xx)** | Show SMSG `type: error`, message: *"Something went wrong. Please try again."* |
 | **Enter Key** | Triggers form submit from any input. |
 | **Escape Key** | Does nothing (modal is not dismissible; login is mandatory). |
+| **EXIT Click** | Show SMSG `type: warning`, persistent: *"Are you sure you want to exit?"* — on confirm, close the application immediately (`window.close()` or navigate to `about:blank`). No pending transactions are waited for. On cancel, return to S001. |
 
 #### 3.2.4 Accessibility
 - All inputs have associated `<label>` with `for` attribute.
@@ -201,7 +203,7 @@
 #### 3.3.1 Layout
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ [S002]  Applai Resume Generator          [👤 User] [Logout] │
+│ [S002]  Applai Resume Generator    [EXIT] [LOGOUT] [CANCEL] │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  [Load from GIST]  [Display All: ●OFF]  [Export]           │
@@ -229,8 +231,9 @@
 |---------|-----|------|-------------|
 | Screen Badge | `s002-badge` | Div | Fixed top-left, text: `S002` |
 | Header Title | `s002-header-title` | Span | "Applai Resume Generator" |
-| User Avatar | `s002-avatar` | Button | `aria-label="User menu"` | Shows user initials or generic icon. Dropdown: Profile, Settings, Logout. |
-| Logout Button | `s002-logout` | Button | "Logout" | Destroys session, clears JWT, routes to S000. **Requires confirmation modal (destructive action per BOUNDARIES.md).** |
+| Exit Button | `s002-exit` | Button | "EXIT" | Closes the entire application immediately after confirmation. No pending transactions are waited for. Also available in S001. |
+| Logout Button | `s002-logout` | Button | "LOGOUT" | Returns to S000 Welcome Screen / S001 Login Popup after confirmation. Clears JWT from memory. No pending transactions are waited for. User must login again or exit. |
+| Cancel Button | `s002-cancel` | Button | "CANCEL" | Cancels running transactions (stops spinner, aborts in-flight requests) after confirmation. If no transactions are running, resets all TVC01 nodes to `selected: true` and discards any text modifications. |
 | Load from GIST Button | `s002-load-gist` | Button | "Load from GIST" | Triggers import flow. If TVC01 already contains data, SMSG `type: warning` prompts: *"Loading a new MasterResume will replace current data. Continue?"* — user must confirm before S002D2 opens. |
 | Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, deselected nodes (and children) are hidden. When ON, all nodes visible regardless of selection state. |
 | Export Button | `s002-export` | Button | "Export" | Opens S002D1 Export Dialogue PopUp. |
@@ -447,12 +450,29 @@
    - Loads selected `MasterResume.JSON` into TVC01 via S002D2 flow.
    - On parse error, show SMSG `type: error`: *"Failed to load MasterResume file. Invalid JSON format."*
 
-3. **Logout:**
-   - Show confirmation SMSG `type: warning`: *"Are you sure you want to log out? Unsaved changes will be lost."*
-   - On confirm: `POST /api/auth/logout`, clear all tokens/storage, hard redirect to S000.
-   - On cancel: return to S002.
+3. **EXIT:**
+   - **Trigger:** Click `s002-exit` (or `s001-exit` from S001).
+   - Show confirmation SMSG `type: warning`, persistent: *"Are you sure you want to exit the application? Any unsaved changes will be lost."*
+   - On confirm: Immediately close the application. **No pending transactions are waited for.** Abort all in-flight `fetch` requests via `AbortController`. Call `window.close()` if permitted by browser, otherwise navigate to `about:blank`.
+   - On cancel: Return to current screen (S002 or S001).
+   - **Rule:** EXIT is a hard termination. No cleanup, no logout API call, no state save.
 
-4. **Session Expiry:**
+4. **LOGOUT:**
+   - **Trigger:** Click `s002-logout`.
+   - Show confirmation SMSG `type: warning`, persistent: *"Are you sure you want to logout? Any unsaved changes will be lost."*
+   - On confirm: Immediately clear JWT from memory. **No pending transactions are waited for.** Abort all in-flight requests. Hard redirect to S000 (Welcome Screen). S001 Login Popup will be shown automatically when S000 health check passes.
+   - On cancel: Return to S002.
+   - **Post-Logout:** User sees S000/S001 and must either login again or click [EXIT] to leave the app.
+   - **Rule:** LOGOUT does NOT call `POST /api/auth/logout` on the server. It is a client-side session clear only. Server-side token expiry is handled by JWT TTL.
+
+5. **CANCEL:**
+   - **Trigger:** Click `s002-cancel`.
+   - **Case A — Transactions running:** If any API call is in flight (import, export, settings save, health check), show confirmation SMSG `type: warning`, persistent: *"Cancel running transactions? All pending operations will be aborted."* — on confirm, abort all `AbortController` signals, stop all spinners, return to idle S002 state.
+   - **Case B — No transactions running:** If TVC01 has been modified (nodes deselected or text edited), show confirmation SMSG `type: warning`, persistent: *"Discard all modifications and reset all nodes to selected?"* — on confirm, reset all nodes in TVC01 to `selected: true`, revert all text edits to last loaded state, clear modification dirty flag. On cancel, return to S002 with modifications preserved.
+   - **Case C — No modifications:** If no transactions and no modifications, show SMSG `type: info`: *"Nothing to cancel."* (auto-dismiss after 3s).
+   - **Rule:** CANCEL is a "soft reset" — it never navigates away from S002.
+
+6. **Session Expiry:**
    - If JWT expires during use and refresh fails, show SMSG `type: error` → *"Session expired"* → redirect to S000.
 
 ---
@@ -502,9 +522,9 @@
 | Rule | Specification |
 |------|---------------|
 | **Stacking** | Only one SMSG visible at a time. New message replaces existing. |
-| **Auto-dismiss** | `success` and `info` auto-dismiss after 5 seconds. `error` and `warning` require manual dismissal. Exception: `warning` used as confirmation dialog is persistent. |
+| **Auto-dismiss** | `success` and `info` auto-dismiss after 5 seconds. `error` and `warning` require manual dismissal. Exception: `warning` used as confirmation dialog (EXIT, LOGOUT, CANCEL, destructive actions) is persistent. |
 | **Focus** | On open, focus moves to `smsg-action` button. Focus trap active. |
-| **Escape** | Pressing Escape dismisses the popup (except for critical errors and confirmation dialogs that block flow). |
+| **Escape** | Pressing Escape dismisses the popup (except for critical errors and confirmation dialogs for EXIT, LOGOUT, CANCEL, and dirty-form warnings that block flow). |
 | **Animation** | Enter: fade in 200ms + scale from 0.95. Exit: fade out 150ms. |
 | **Accessibility** | `role="alertdialog"`, `aria-modal="true"`, `aria-labelledby="smsg-title"`. |
 
@@ -684,9 +704,10 @@ flowchart TD
     classDef dialog fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
 
     class S000,S001,S002 screen
-    class SMSG_Error1,SMSG_Error2,SMSG_Error3,SMSG_Error4,SMSG_Warn1,SMSG_Success1 msg
-    class Health,CheckAuth,LoginAPI,LogoutAPI api
+    class SMSG_Error1,SMSG_Error2,SMSG_Error3,SMSG_Error4,SMSG_Warn1,SMSG_Success1,SMSG_Success2 msg
+    class Health,CheckAuth,LoginAPI api
     class S002D1,S002D2,S002S1 dialog
+    class ConfirmExit,ConfirmLogout,ConfirmCancel,AppClose,S000_Clear,AbortTX,ResetNodes api
 ```
 
 ---
@@ -699,12 +720,14 @@ flowchart TD
 | `LOGIN_REQUIRED` | S001 visible, awaiting user input | → `AUTHENTICATING` (form submit) |
 | `AUTHENTICATING` | Login API in flight | → `AUTHENTICATED` (success) / → `LOGIN_ERROR` (failure) |
 | `LOGIN_ERROR` | Error displayed in SMSG, S001 still visible | → `LOGIN_REQUIRED` (dismiss) / → `AUTHENTICATING` (retry) |
-| `AUTHENTICATED` | Valid session, S002 visible | → `IMPORT_DIALOG` (no cached data) / → `RESUME_LOADED` (cached data) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `SESSION_EXPIRED` |
+| `AUTHENTICATED` | Valid session, S002 visible | → `IMPORT_DIALOG` (no cached data) / → `RESUME_LOADED` (cached data) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` / → `SESSION_EXPIRED` |
 | `IMPORT_DIALOG` | S002D2 open, awaiting GIST input | → `RESUME_LOADED` (import success) / → `EMPTY_STATE` (cancel) |
-| `RESUME_LOADED` | TVC01 populated with MasterResume data | → `EXPORT_DIALOG` / → `IMPORT_DIALOG` (load new) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `SESSION_EXPIRED` |
+| `RESUME_LOADED` | TVC01 populated with MasterResume data | → `EXPORT_DIALOG` / → `IMPORT_DIALOG` (load new) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` / → `SESSION_EXPIRED` |
 | `EXPORT_DIALOG` | S002D1 open, awaiting filename | → `RESUME_LOADED` (export success or cancel) |
 | `SETTINGS_PANEL` | S002S1 open, editing user settings | → `RESUME_LOADED` (save success or cancel) / → `EMPTY_STATE` |
-| `EMPTY_STATE` | S002 visible, TVC01 empty | → `IMPORT_DIALOG` / → `SETTINGS_PANEL` / → `LOGGING_OUT` |
+| `EMPTY_STATE` | S002 visible, TVC01 empty | → `IMPORT_DIALOG` / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` |
+| `LOGGING_OUT` | LOGOUT confirmed, clearing session | → `LOGIN_REQUIRED` (S000/S001 shown) |
+| `EXITING_APP` | EXIT confirmed, terminating app | → Terminal state (browser tab closed) |
 | `SERVICE_DOWN` | Auth service unreachable | → `AUTH_CHECKING` (retry) |
 | `SESSION_EXPIRED` | JWT expired and refresh failed | → `AUTH_CHECKING` (auto) |
 
@@ -729,6 +752,10 @@ flowchart TD
 | Invalid settings GIST URL | Inline error + SMSG error | Correct URL | None |
 | Invalid settings filename | Inline error | Correct filename | None |
 | Settings save failed (5xx) | SMSG error | Retry | Log server-side |
+| EXIT confirmed | App closes immediately | — | Abort all requests, no cleanup |
+| LOGOUT confirmed | Redirect to S000 | Login again or EXIT | Clear JWT, abort requests |
+| CANCEL with running tx | SMSG warning → abort | Confirm or dismiss | AbortController signal |
+| CANCEL with modifications | SMSG warning → reset | Confirm or dismiss | Reset nodes to selected |
 
 ---
 
@@ -779,6 +806,7 @@ flowchart TD
 3. **VibeCoding Ready:** Copy screen sections directly into component prompts. The state machine (§5) and interaction diagram (§4) define all logic.
 4. **Testing:** Verify all error scenarios in §6 before marking complete.
 5. **Accessibility:** Run axe-core or Lighthouse. Target 100% accessibility score.
+6. **Button Semantics:** EXIT terminates the app immediately (no cleanup). LOGOUT clears client-side auth and returns to Welcome Screen (no server call). CANCEL aborts transactions or resets node selections (never navigates away).
 
 ---
 
