@@ -87,7 +87,7 @@ CSS-in-JS (Styled Components, Emotion) — Use Tailwind + CSS Modules for edge c
 * ✅ All destructive actions must have confirmation (modal or undo).
 
 
-## 5. Browser and Device Support
+## 6. Browser and Device Support
 ```plaintext
 | Platform                         | Support Level     |
 | -------------------------------- | ----------------- |
@@ -100,7 +100,7 @@ CSS-in-JS (Styled Components, Emotion) — Use Tailwind + CSS Modules for edge c
 | Opera / Brave / Arc              | Best effort       |
 ```
 
-## 6. Git and Workflow Boundaries
+## 7. Git and Workflow Boundaries
 ```plaintext
 | Rule           | Constraint                                                           |
 | -------------- | -------------------------------------------------------------------- |
@@ -111,7 +111,7 @@ CSS-in-JS (Styled Components, Emotion) — Use Tailwind + CSS Modules for edge c
 | Pre-commit     | Lint + Type check must pass                                          |
 ```
 
-## 9. AI-Assisted Coding Boundaries
+## 8. AI-Assisted Coding Boundaries
 When using AI assistance (vibecoding):
 * ✅ AI may generate code following all patterns in PATTERNS.md.
 * ✅ AI may suggest refactors that improve readability.
