@@ -231,7 +231,7 @@
 | Header Title | `s002-header-title` | Span | "Applai Resume Generator" |
 | User Avatar | `s002-avatar` | Button | `aria-label="User menu"` | Shows user initials or generic icon. Dropdown: Profile, Settings, Logout. |
 | Logout Button | `s002-logout` | Button | "Logout" | Destroys session, clears JWT, routes to S000. |
-| Load from GIST Button | `s002-load-gist` | Button | "Load from GIST" | Triggers GIST file picker/load flow: Opens S002D2 — GIST MasterResume IMPORT Dialogue PopUp for loading a new MasterCV.JSON into TVC01. |
+| Load from GIST Button | `s002-load-gist` | Button | "Load from GIST" | Triggers GIST file picker/load flow: 1. If TVC01 already contains data when opened, SMSG type: warning prompts: "Loading a new MasterCV will replace current data. Continue?" — user must confirm before S002D2 opens. When confirmed: 2. Opens S002D2 — GIST MasterResume IMPORT Dialogue PopUp for loading a new MasterCV.JSON into TVC01. |
 | Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, deselected nodes (and children) are hidden. When ON, all nodes visible regardless of selection state. |
 | Export Button | `s002-export` | Button | "Export" | Opens S002D1 Export Dialogue PopUp. |
 | TreeView Container | `s002-tvc01-container` | Div | Mount point for TVC01 component. |
@@ -341,7 +341,7 @@
 
 #### 3.3.6 S002D2 — GIST MasterResume IMPORT Dialogue PopUp
 
-**Purpose:** Loading the Tremplate MasterResume.json from a GIST when the [Load from GIST]-Button is clicked on S002. 
+**Purpose:**  Collect the GIST URL and Filename to load a new Tremplate MasterResume.json from a GIST when either the [Load from GIST]-Button is clicked on S002 or no MasterResume.json file was loaded when the App is launched.  
 
 **Container:** Modal popup consistent with SMSG design system (same overlay, card styling, shadows, animations).
 
@@ -352,20 +352,24 @@
 │    ┌───────────────────────────────┐    │
 │    │  [S002D2]                     │    │
 │    │                               │    │
-│    │  Import Your CV               │    │
+│    │  Import Master CV             │    │
 │    │                               │    │
 │    │  Please enter the URL of your │    │
 │    │  Gist and choose your Master- │    │
 │    │  Reusume file                 │    │
 │    │                               │    │
+│    │                               │    │
+│    │   Gist URL:                   │    │
 │    │  ┌─────────────────────────┐  │    │
-│    │  │  Gist URL               │  │    │
+│    │  │  https://gist.github... │  │    │
 │    │  └─────────────────────────┘  │    │
+│    │                               │    │
+│    │   Name of MasterFile:         │    │
 │    │  ┌─────────────────────────┐  │    │
 │    │  │  MasterResume.json      │  │    │
 │    │  └─────────────────────────┘  │    │
 │    │                               │    │
-│    │  [  Cancel  ]  [  Load  ]     │    │
+│    │  [  Cancel  ]  [  Import ]    │    │
 │    │                               │    │
 │    └───────────────────────────────┘    │
 │                                         │
@@ -377,27 +381,43 @@
 | Element | ID | Type | Label / Placeholder | Validation / Constraints |
 |---------|-----|------|---------------------|--------------------------|
 | Screen Badge | `s002d2-badge` | Div | — | Fixed top-left of popup, text: `S002D2` |
-| Title | `s002d2-title` | H3 | "Load MasterResume" | — |
-| Prompt Message | `s002d2-prompt` | P | "Please enter a qualified name for your exported CV." | — |
-| GIST Label | `s002d2-name-label` | Label | "GIST URL" | — |
-| GIST Input | `s002d2-name` | Text | `placeholder="GIST URL"` | Required. Min 3 chars, max 60 chars. Regex: `^[a-zA-Z0-9_-.]{3,23}$`. Only regular characters, numbers, hyphen, dots and underscore allowed. |
+| Title | `s002d2-title` | H3 | "Import Master CV" | — |
+| Prompt Message | `s002d2-prompt` | P | "Please enter the GIST URL and then choose a file for import." | — |
+| GIST Source Label | `s002d2-name-label` | Label | "GIST URL" | — |
+| GIST Source Input | `s002d2-name` | Text | `placeholder="https://gist.github..."` | Required. Min 3 chars, max 60 chars. Regex: `^[a-zA-Z0-9_-.]{3,23}$`. Only regular characters, numbers, hyphen, dots and underscore allowed. |
 | Name Error | `s002d2-name-error` | Span | Inline error | Hidden by default. Shows: *"GIST URL must be 3–60 characters. Only letters, numbers, hyphens, dotrs and underscores allowed."* |
 | Resume Name | `s002d2-name-label` | Label | "Resume Name" | — |
 | Resume Input | `s002d2-name` | Text | `placeholder="ResumeFileName"` | Required. Min 3 chars, max 60 chars. Regex: `^[a-zA-Z0-9_-.]{3,23}$`. Only regular characters, numbers, hyphen, dots and underscore allowed. |
 | Name Error | `s002d2-name-error` | Span | Inline error | Hidden by default. Shows: *"FileName must be 3–60 characters. Only letters, numbers, hyphens, dots and underscores allowed."* |
 | Cancel Button | `s002d2-cancel` | Button | "Cancel" | Secondary style. Closes popup immediately. Cancels any running export transaction. No side effects. |
-| Load Button | `s002d2-load` | Button | "Load" | Primary style. Disabled until input is valid. Triggers loading or new MasterResume.json file |
+| Import Button | `s002d2-load` | Button | "Import" | Primary style. Disabled until input is valid. Triggers loading / Import of new MasterResume.json file |
 
 **Behavior:**
 
 | Event | Action |
 |-------|--------|
-| **Popup Open** | Pre-fill input with default value `GIST URL` for GistURL and MasterResume.json for the FileName. Focus on GIST Input, select all text. |
-| **Input Blur** | Validate regex and length. Show inline error if invalid. |
-| **Load Click** | 1. Validate input. 2. If invalid, show error and focus field. 3. If valid, close popup. 4. Load the new MasterResume.json into the TreeView 5. Show SMSG `type: success`: *"New MasterResume loaded: [filename]."* |
-| **Cancel Click** | Close popup immediately. Abort any in-flight export request. Return to S002. |
+| **Popup Open** | Input is empty. Focus s002d2-source and select all text. Prefill the GIST URL with the last successfully used GIST URL from the actual session data (cache). When nothing was cached, load the default GIST URL from the user's profile settings and finally, when still not found from the "GIST-SOURCE" named environment variable. When the GIST URL is accessible display its name in the GIST Source Input field and the Name of the GIST's first found *.JSON file in the [Resume Name]-Input field. When no GIST and/or no file can be found this way, display the default values as indicated. 
+| **Input Blur** | If the Input String does not start with https:// put "https:// in front of the string. Then Validate URL format (regex: ^https?://.+ or known GIST filename pattern). Show inline error if invalid. Validate regex and length. Show inline error if invalid. |
+| **Load Click** | 1. Validate input. 2. If invalid, show error and focus incorrect field. 3. If valid disable [Import]-button, show spinner. 4. GET /api/gist/load?source={url} 5. On success: parse JSON → validate structure → populate TVC01 → close popup → show SMSG type: success: "New MasterResume loaded: [filename]" 6. On failure: show SMSG with specific error (see below).
+| **Cancel Click** | Close popup immediately. Abort any in-flight request. Return to S002.|
 | **Escape Key** | Same as Cancel. |
 | **Overlay Click** | Same as Cancel. |
+
+##### ErrorHandling
+| Error                  | SMSG Type | Message                                                    |
+| ---------------------- | --------- | ---------------------------------------------------------- |
+| Invalid URL format     | `error`   | "Please enter a valid GIST URL."                           |
+| GIST not found (404)   | `error`   | "GIST not found. Please check the URL and try again."      |
+| File not found in GIST | `error`   | "MasterCV.JSON not found in this GIST."                    |
+| Invalid JSON parse     | `error`   | "Failed to parse MasterCV file. Invalid JSON format."      |
+| Invalid JSON structure | `error`   | "MasterCV file has an unexpected structure."               |
+| Network timeout        | `warning` | "Connection timed out. Please try again."                  |
+| 5xx server error       | `error`   | "Server error while loading GIST. Please try again later." |
+
+##### Post-Import Behavior
+On successful import: TVC01 is populated with the loaded MasterCVNode[].
+All nodes default to selected = true on first import.
+The GIST source URL is saved to localStorage key: last_gist_source for future pre-fill.
 
 #### 3.3.7 Behavior & Logic
 
