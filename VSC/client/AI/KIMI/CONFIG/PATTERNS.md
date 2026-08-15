@@ -1,3 +1,10 @@
+# PATTERNS.md :: Reusable Code Patterns for Applai Resume Generator
+
+* -> Use these patterns when implementing any feature from SPEC.md.
+* -> Never deviate from these patterns without updating this file.
+
+---
+
 ## P01 — Screen Component Pattern
 
 Every screen (S000, S001, S002, SMSG, S002D1) follows this structure:
