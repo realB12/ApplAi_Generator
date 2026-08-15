@@ -11,24 +11,24 @@ Compile a job-offer specific Resumee.md and CoverLetter.md from a given in GIT h
 
 ## 3. Core User Journeys
 ### Journey A: The "Happy Path" (Most Critical)
-1. **Authentication**: User opens the App and is greated witha Welcome Screen (S000) where he/she is asked for UserID and Password (S001 — Login Popup). This step is skipped when the User is recognized (e.g. from a cached token).   
+1. **Authentication**: User opens the App and is greated with a Welcome Screen (S000) where he/she is asked for UserID and Password (S001 — Login Popup). This step is skipped when the User is recognized (e.g. from a cached token).   
 
-2. After successful Authentication the MainScreen (S002) displays the same state (TreeView for the last loaded Resume file with the same boxes selected/deselected as when the App was left the last time). When such Resume.json data is not or no longer found (neither in the cache nor in the GIST), the user will be asked for the URL of the GIST from where a new MasterResume can be loaded. When the GIST cannot be found, no Resume files can be found or when no Resume file can be loaded from the GIST: show a warning. 
+2. **MainScreen**: After successful Authentication the MainScreen (S002) displays the same state from the last session (e.g. displays the TreeView for the last loaded Resume file with the same boxes selected/deselected as when the App was left the last time). When such Resume.json data is not or no longer found (neither in the cache nor in the GIST), the S002D2 — GIST MasterResume IMPORT Dialogue PopUp opens and the user will be asked for the URL of the GIST from where he or she may pick a new MasterResume to be loaded. When the GIST cannot be found, no Resume files can be found or when no Resume file can be loaded from the GIST: show a warning. Make sure the user can leave the app anytime with the [Cancel] button. 
 
-3. Once a valid Resume Files was loaded, all the data from the such loaded JSON-file is displayed in the MainScreen's TreeView, where the user can collapse/open tree-branches, select/deselect specific tree-nodes (to activate specific skills or experiences) and edit the loaded text displayed for the tree-nodes related to skills or experiences. 
+3. Once a valid Resume Files is loaded, all the data from the such loaded JSON-file is displayed in the MainScreen's TreeView wiht all boxes initially selected. Here the user can collapse/open tree-branches, select/deselect specific tree-nodes (to activate specific skills or experiences) and edit the loaded text displayed for the tree-nodes related to skills or experiences. 
 
-4. When the users clicks the [EXPORT] button, the user will be asked for Name for this file e.g. "GeneratedCV.json", the app will generate a subset of the initially loaded MasterResume.json into the "GeneratedCV.json" file with only the selected nodes from the tree-view. 
+4. When the users clicks the [EXPORT]-button, the user will be asked for Name for the export Json file such as "myGeneratedCV.json". When the name is valid, the popup is closed and the app generates a subset of the initially loaded MasterResume.json into the "myGeneratedCV.json" file with only the selected nodes from the tree-view. 
 
-5. The App can be closed anytime when the CLOSE-Button is clicked.
+5. The App can be closed anytime when the [Close]-Button is clicked.
 
 ### Journey C: Recovery / Error
-1. **Authentication goes wrong**: Display an error message and let the user retry again.   
+1. **Authentication goes wrong**: Display an error message and let the user retry again. When not authenticated (or when the authentication token is lost or has timed out): Never show any other screen than the S000 Welcome screen and S001 Authentication popup.     
 
-2. **MasterResume cannot be loaded**: Display an error message and let the user insert a new path. 
+2. **MasterResume.json cannot be loaded**: Display an error message and let the user insert a new path in the  GIST Load Dialogue Popup. 
 
-3. **GIST not found**: Display an error message and let the user insert a new path.
+3. **GIST not found**: Display an error message and let the user insert a new path in the  GIST Load Dialogue Popup. 
 
-4. **MasterResume is not valid JSON**: Display an error message and let the user select a different file.
+4. **MasterResume is not valid JSON**: Display an error message and let the user select a different file in the GIST Load Dialogue Popup.
 
 ## 4. Success Criteria (Definition of "Done")
 1. User can login
