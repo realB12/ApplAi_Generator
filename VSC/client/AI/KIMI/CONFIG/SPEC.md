@@ -196,7 +196,7 @@
 
 ### 3.3 S002 — Main Screen
 
-**Purpose:** Core application interface for managing and exporting resume data from a MasterCV.JSON file. Only accessible post-authentication.
+**Purpose:** Core application interface for managing and exporting resume data from a GIST loaded  MasterResume.JSON file. Only accessible post-authentication.
 
 #### 3.3.1 Layout
 ```
@@ -231,7 +231,7 @@
 | Header Title | `s002-header-title` | Span | "Applai Resume Generator" |
 | User Avatar | `s002-avatar` | Button | `aria-label="User menu"` | Shows user initials or generic icon. Dropdown: Profile, Settings, Logout. |
 | Logout Button | `s002-logout` | Button | "Logout" | Destroys session, clears JWT, routes to S000. |
-| Load from GIST Button | `s002-load-gist` | Button | "Load from GIST" | Triggers GIST file picker/load flow. Loads MasterCV.JSON into TVC01. |
+| Load from GIST Button | `s002-load-gist` | Button | "Load from GIST" | Triggers GIST file picker/load flow: Opens S002D2 — GIST MasterResume IMPORT Dialogue PopUp for loading a new MasterCV.JSON into TVC01. |
 | Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, deselected nodes (and children) are hidden. When ON, all nodes visible regardless of selection state. |
 | Export Button | `s002-export` | Button | "Export" | Opens S002D1 Export Dialogue PopUp. |
 | TreeView Container | `s002-tvc01-container` | Div | Mount point for TVC01 component. |
@@ -339,6 +339,66 @@
 - Collision handling: If `[name].JSON` exists in GIST, append two-digit counter starting at `01`: `[name]01.JSON`, `[name]02.JSON`, up to `99`.
 - If all 100 variants exist, show SMSG `type: error`: *"Export failed: too many files with this name. Please choose a different name."*
 
+#### 3.3.6 S002D2 — GIST MasterResume IMPORT Dialogue PopUp
+
+**Purpose:** Loading the Tremplate MasterResume.json from a GIST when the [Load from GIST]-Button is clicked on S002. 
+
+**Container:** Modal popup consistent with SMSG design system (same overlay, card styling, shadows, animations).
+
+**Layout:**
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│    ┌───────────────────────────────┐    │
+│    │  [S002D2]                     │    │
+│    │                               │    │
+│    │  Import Your CV               │    │
+│    │                               │    │
+│    │  Please enter the URL of your │    │
+│    │  Gist and choose your Master- │    │
+│    │  Reusume file                 │    │
+│    │                               │    │
+│    │  ┌─────────────────────────┐  │    │
+│    │  │  Gist URL               │  │    │
+│    │  └─────────────────────────┘  │    │
+│    │  ┌─────────────────────────┐  │    │
+│    │  │  MasterResume.json      │  │    │
+│    │  └─────────────────────────┘  │    │
+│    │                               │    │
+│    │  [  Cancel  ]  [  Load  ]     │    │
+│    │                               │    │
+│    └───────────────────────────────┘    │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**Elements:**
+
+| Element | ID | Type | Label / Placeholder | Validation / Constraints |
+|---------|-----|------|---------------------|--------------------------|
+| Screen Badge | `s002d2-badge` | Div | — | Fixed top-left of popup, text: `S002D2` |
+| Title | `s002d2-title` | H3 | "Load MasterResume" | — |
+| Prompt Message | `s002d2-prompt` | P | "Please enter a qualified name for your exported CV." | — |
+| GIST Label | `s002d2-name-label` | Label | "GIST URL" | — |
+| GIST Input | `s002d2-name` | Text | `placeholder="GIST URL"` | Required. Min 3 chars, max 60 chars. Regex: `^[a-zA-Z0-9_-.]{3,23}$`. Only regular characters, numbers, hyphen, dots and underscore allowed. |
+| Name Error | `s002d2-name-error` | Span | Inline error | Hidden by default. Shows: *"GIST URL must be 3–60 characters. Only letters, numbers, hyphens, dotrs and underscores allowed."* |
+| Resume Name | `s002d2-name-label` | Label | "Resume Name" | — |
+| Resume Input | `s002d2-name` | Text | `placeholder="ResumeFileName"` | Required. Min 3 chars, max 60 chars. Regex: `^[a-zA-Z0-9_-.]{3,23}$`. Only regular characters, numbers, hyphen, dots and underscore allowed. |
+| Name Error | `s002d2-name-error` | Span | Inline error | Hidden by default. Shows: *"FileName must be 3–60 characters. Only letters, numbers, hyphens, dots and underscores allowed."* |
+| Cancel Button | `s002d2-cancel` | Button | "Cancel" | Secondary style. Closes popup immediately. Cancels any running export transaction. No side effects. |
+| Load Button | `s002d2-load` | Button | "Load" | Primary style. Disabled until input is valid. Triggers loading or new MasterResume.json file |
+
+**Behavior:**
+
+| Event | Action |
+|-------|--------|
+| **Popup Open** | Pre-fill input with default value `GIST URL` for GistURL and MasterResume.json for the FileName. Focus on GIST Input, select all text. |
+| **Input Blur** | Validate regex and length. Show inline error if invalid. |
+| **Load Click** | 1. Validate input. 2. If invalid, show error and focus field. 3. If valid, close popup. 4. Load the new MasterResume.json into the TreeView 5. Show SMSG `type: success`: *"New MasterResume loaded: [filename]."* |
+| **Cancel Click** | Close popup immediately. Abort any in-flight export request. Return to S002. |
+| **Escape Key** | Same as Cancel. |
+| **Overlay Click** | Same as Cancel. |
+
 #### 3.3.7 Behavior & Logic
 
 1. **On Mount:**
@@ -348,8 +408,8 @@
 
 2. **Load from GIST:**
    - Opens GIST file picker (specific mechanism to be defined by implementer).
-   - Loads selected `MasterCV.JSON` into TVC01.
-   - On parse error, show SMSG `type: error`: *"Failed to load CV file. Invalid JSON format."*
+   - Loads selected `MasterResume.JSON` into TVC01.
+   - On parse error, show SMSG `type: error`: *"Failed to load MasterResume file. Invalid JSON format."*
 
 3. **Logout:**
    - `POST /api/auth/logout`, clear all tokens/storage, hard redirect to S000.
