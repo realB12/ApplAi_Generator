@@ -35,7 +35,6 @@
 | Icons | Lucide React | latest | Consistent, tree-shakeable |
 | Date Handling | date-fns | 4.x | Modular, immutable |
 | HTTP Client | Fetch API | native | No extra dependency |
-| IDE | VS Code | latest | Development environment |
 | CAPTCHA | hCaptcha | v2 invisible | Rate-limit protection after 3 failed logins |
 
 > **Note:** TVC01 (TreeView Component) is a **custom feature component** built with `@tanstack/react-virtual` for performance and shadcn/ui primitives for UI. No external TreeView library is used.
@@ -73,16 +72,16 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   |   |   |   ├── stores/        # Auth Zustand slice
 |   |   |   |   |   ├── types/         # Auth types
 |   |   |   |   |   └── utils/         # Auth utilities
-|   |   |   |   └── resume/            # RESUME Feature — S002, TVC01, S002D1
-|   |   |   |       ├── api/           # GIST API calls
-|   |   |   |       ├── components/    # S002, TVC01, S002D1 components
-|   |   |   |       ├── hooks/         # useGist, useTreeView
+|   |   |   |   └── resume/            # RESUME Feature — S002, TVC01, S002D1, S002D2, S002S1
+|   |   |   |       ├── api/           # GIST API calls, User Settings API calls
+|   |   |   |       ├── components/    # S002, TVC01, S002D1, S002D2, S002S1 components
+|   |   |   |       ├── hooks/         # useGist, useTreeView, useSettings
 |   |   |   |       ├── stores/        # Resume Zustand slice
-|   |   |   |       ├── types/         # MasterCV JSON types
+|   |   |   |       ├── types/         # MasterCV JSON types, UserSettings types
 |   |   |   |       └── utils/         # Tree helpers, export helpers
 |   |   |   ├── hooks/                 # Global shared hooks
 |   |   |   ├── lib/                   # Utilities, helpers
-|   |   |   │   ├── api.ts             # API client setup (Fetch + interceptors)
+|   |   |   │   ├── api.ts             # API client setup (Fetch + interceptors + AbortController)
 |   |   |   │   ├── utils.ts           # General utilities (cn, etc.)
 |   |   |   │   └── constants.ts       # App constants
 |   |   |   ├── types/                 # Global TypeScript types
@@ -113,7 +112,11 @@ All other folders must not be touched by AI agents or other forms of generative 
 | S002 — Main Screen | `features/resume/` | `/app` | `features/resume/components/MainScreen.tsx` |
 | TVC01 — TreeView | `features/resume/` | `/app` | `features/resume/components/TreeView.tsx` |
 | S002D1 — Export Dialogue | `features/resume/` | `/app` | `features/resume/components/ExportDialog.tsx` |
+| S002D2 — Import Dialogue | `features/resume/` | `/app` | `features/resume/components/ImportDialog.tsx` |
+| S002S1 — Settings Panel | `features/resume/` | `/app` | `features/resume/components/SettingsPanel.tsx` |
 | SMSG — Message PopUp | `features/auth/` | any | `features/auth/components/MessagePopup.tsx` |
+
+> **Note:** All S002 dialogs (S002D1, S002D2, S002S1) are rendered as inline modals/overlays within the `/app` route. No separate routes are defined for them. They are controlled by Zustand `ui` state flags (e.g., `isExportOpen`, `isImportOpen`, `isSettingsOpen`).
 
 ## 4. Route Definitions
 
@@ -127,6 +130,8 @@ const routes = [
   { path: '*', element: <Navigate to="/" replace /> }
 ];
 ```
+
+> **Note:** S002D1, S002D2, S002S1 are NOT separate routes. They are conditional renders inside `MainScreen.tsx` controlled by local state or Zustand `ui` flags.
 
 ## 5. Data Model
 
@@ -143,6 +148,12 @@ interface User {
   updatedAt: Date;
 }
 
+interface UserSettings {
+  gistUrl?: string;
+  masterResumeFile?: string;
+  preferredCvName?: string;
+}
+
 interface MasterCVNode {
   id: string;
   label: string;
@@ -154,10 +165,11 @@ interface MasterCVNode {
 
 interface GistFile {
   filename: string;
-  content: string;
   raw_url?: string;
 }
 ```
+
+> **Note:** `GistFile` is used for listing GIST contents only. The `load` endpoint returns `MasterCVNode[]` (already parsed JSON tree), not a raw file with string content.
 
 ## 6. API Contract
 
@@ -175,10 +187,17 @@ interface GistFile {
 
 | Endpoint | Method | Request | Response | Auth |
 | -------- | ------ | ------- | -------- | ---- |
-| `/api/gist/files` | GET | — | `GistFile[]` | Yes |
-| `/api/gist/load` | GET | `?filename=MasterCV.JSON` | `MasterCVNode[]` | Yes |
+| `/api/gist/files` | GET | `?gistUrl={url}` | `GistFile[]` | Yes |
+| `/api/gist/load` | GET | `?gistUrl={url}&filename={name}` | `MasterCVNode[]` | Yes |
 | `/api/gist/export` | POST | `{ filename, content: MasterCVNode[] }` | `{ filename, url }` | Yes |
-| `/api/gist/check` | GET | `?prefix=GeneratedCV` | `{ exists: boolean, nextSuffix?: number }` | Yes |
+| `/api/gist/check` | GET | `?prefix={name}` | `{ exists: boolean, nextSuffix?: number }` | Yes |
+
+### User Settings Endpoints
+
+| Endpoint | Method | Request | Response | Auth |
+| -------- | ------ | ------- | -------- | ---- |
+| `/api/user/settings` | GET | — | `UserSettings` | Yes |
+| `/api/user/settings` | PATCH | `{ gistUrl?, masterResumeFile?, preferredCvName? }` | `UserSettings` | Yes |
 
 ### Error Response Format
 
@@ -202,9 +221,11 @@ interface GistFile {
 | Password Hashing | Server-side: Argon2id. Client-side: min 12 chars, 1 upper, 1 lower, 1 digit, 1 special. |
 | Rate Limiting | 5 attempts / 15 min / IP. After 3 failures: hCaptcha v2 invisible required. After 5 failures: 15-min lockout. |
 | Route Guards | `ProtectedRoute` wrapper — redirect to `/` (S000) if unauthenticated. |
-| Role-based UI | `usePermission()` hook — hide elements, not just disable. |
+| Role-based UI | `usePermission()` hook — hide elements, not just disable. (Minimal implementation: check `user.role === 'admin'`). |
 | API Errors | 401 → clear auth state → redirect to `/`. |
-| Logout | `POST /api/auth/logout` + clear in-memory token + redirect to S000. **Requires confirmation modal (destructive action).** |
+| **EXIT** | Client-side only. Show confirmation SMSG → `window.close()` or `about:blank`. **No server call. No cleanup. No pending transactions waited for.** Abort all in-flight requests via `AbortController`. |
+| **LOGOUT** | Client-side only. Show confirmation SMSG → clear JWT from Zustand → abort all requests → hard redirect to S000. **No `POST /api/auth/logout` server call.** Token expiry is handled by JWT TTL. |
+| **CANCEL** | Abort all `AbortController` signals → stop spinners. If no transactions running: reset all TVC01 nodes to `selected: true`, revert text edits. **Never navigates away from S002.** |
 
 ## 8. State Management Strategy
 
@@ -219,14 +240,38 @@ interface GistFile {
 ### Client State (Zustand)
 
 **Global store slices:**
-* `auth`: `{ user, accessToken, isAuthenticated, login(), logout(), setToken() }`
-* `ui`: `{ theme, sidebarOpen, activeModal, toastQueue }`
-* `resume`: `{ masterCV: MasterCVNode[] | null, displayAll: boolean, selectedNodes: Set<string> }`
+* `auth`: `{ user, accessToken, isAuthenticated, isLoading, setAuth(), clearAuth(), setLoading() }`
+* `ui`: `{ theme, sidebarOpen, activeModal, toastQueue, settings: UserSettings | null, isExportOpen, isImportOpen, isSettingsOpen }`
+* `resume`: `{ masterCV: MasterCVNode[] | null, displayAll: boolean }`
+
+> **Note:** `selectedNodes` is NOT a separate Set. Selection state is a property of each `MasterCVNode` (`selected: boolean`). Derive selected subsets by traversing `masterCV` tree. Cache derived selections in `localStorage` (key: `applai_selection_{userId}`) for session persistence.
 
 ### Form State
 * **Tool:** React Hook Form + Zod
 * All forms validated via Zod schemas before submission.
 * Error messages displayed inline per field + SMSG for server errors.
+
+### Request Cancellation (AbortController)
+
+All `fetch` calls in `lib/api.ts` must accept an optional `signal?: AbortSignal` parameter and pass it to `fetch()`. The API client exposes:
+
+```typescript
+// lib/api.ts
+const abortControllers = new Set<AbortController>();
+
+export function createRequestSignal(): AbortSignal {
+  const controller = new AbortController();
+  abortControllers.add(controller);
+  return controller.signal;
+}
+
+export function abortAllRequests(): void {
+  abortControllers.forEach((c) => c.abort());
+  abortControllers.clear();
+}
+```
+
+**Usage:** EXIT, LOGOUT, and CANCEL buttons call `abortAllRequests()` before executing their primary action.
 
 ## 9. Performance Budget
 
@@ -265,14 +310,19 @@ interface GistFile {
 
 ### Test Mapping to SPEC Screens:
 
-| Screen | Test Type | Critical Path |
-|--------|-----------|---------------|
+| Screen / Component | Test Type | Critical Path |
+|--------------------|-----------|---------------|
 | S000 | E2E | Health check → spinner → S001 mount |
-| S001 | Component + E2E | Form validation, CAPTCHA trigger, login success/failure |
-| S002 | E2E | Session validation, TVC01 render, logout confirmation |
-| TVC01 | Component + Unit | Node selection, collapse/expand, displayAll toggle |
-| S002D1 | Component | Filename validation, collision handling, cancel behavior |
-| SMSG | Component | All 4 message types render correctly, auto-dismiss, focus trap |
+| S001 | Component + E2E | Form validation, CAPTCHA trigger, login success/failure, EXIT confirmation |
+| S002 | E2E | Session validation, TVC01 render, EXIT/LOGOUT/CANCEL confirmations |
+| TVC01 | Component + Unit | Node selection, collapse/expand, displayAll toggle, text editing |
+| S002D1 | Component | Filename validation, collision handling, cancel behavior, settings pre-fill |
+| S002D2 | Component + E2E | GIST URL validation, filename auto-populate, import success/failure, cancel behavior |
+| S002S1 | Component | Settings validation, dirty-check confirmation, save/cancel flows, URL pre-fill cascade |
+| SMSG | Component | All 4 message types render correctly, auto-dismiss, focus trap, persistent confirmations |
+| EXIT button | E2E | Confirmation dialog, app termination, no cleanup, abort in-flight requests |
+| LOGOUT button | E2E | Confirmation dialog, JWT clear, redirect to S000, no server call |
+| CANCEL button | Component + E2E | Transaction abort (stop spinner), node reset to selected, modification discard |
 
 ## 11. Deployment
 
@@ -288,10 +338,13 @@ interface GistFile {
 | -------- | -------- | ----------- | ------- |
 | `VITE_API_URL` | Yes | Backend API base URL | `https://api.example.com/v1` |
 | `VITE_APP_NAME` | No | Display name | `"Applai Resume Generator"` |
-| `VITE_SENTRY_DSN` | No | Error tracking | `https://...@sentry.io/...` |
 | `VITE_HCAPTCHA_SITEKEY` | Yes | hCaptcha site key | `10000000-ffff-ffff-ffff-000000000001` |
+| `VITE_DEFAULT_GIST_URL` | No | Fallback GIST URL for S002D2 pre-fill | `https://gist.github.com/...` |
+| `VITE_SENTRY_DSN` | No | Error tracking (optional) | `https://...@sentry.io/...` |
 
 **Rule**: Never commit `.env.local`. Use `.env.example` as template.
+
+> **Note:** `VITE_SENTRY_DSN` is optional. If used, add `@sentry/react` to dependencies per BOUNDARIES.md approval process.
 
 ## 13. Security Configuration
 
@@ -324,3 +377,12 @@ frame-src https://newassets.hcaptcha.com;
 | 2026-08-14 | Custom TreeView over react-arborist | Dependency minimalism | react-arborist: extra dependency; `@tanstack/react-virtual` already in stack |
 | 2026-08-14 | Memory-only JWT + httpOnly refresh cookie | Security (XSS protection) | localStorage: vulnerable to XSS theft |
 | 2026-08-14 | hCaptcha over reCAPTCHA | Privacy (GDPR-friendly) | reCAPTCHA: heavier tracking footprint |
+| 2026-08-15 | EXIT / LOGOUT / CANCEL instead of single Logout button | Clear separation of concerns: terminate app vs clear session vs reset state | Single Logout button: ambiguous behavior, violates BOUNDARIES.md destructive action clarity |
+| 2026-08-15 | S002S1 Settings Panel | Centralized user preferences for GIST URL, filename defaults | Scattered env vars and hardcoded defaults: error-prone, poor UX |
+| 2026-08-15 | S002D2 Import Dialog | Explicit GIST URL + filename selection vs implicit auto-load | Auto-load without user confirmation: error-prone, violates VISION.md "asked for URL" |
+| 2026-08-15 | Client-side LOGOUT only (no server call) | Simplicity + speed. JWT TTL handles server-side expiry. Server logout endpoint kept for future use. | Server-side logout: adds latency, unnecessary for SPA session model |
+| 2026-08-15 | AbortController for all requests | Enables instant cancellation for EXIT/LOGOUT/CANCEL without waiting for pending transactions | Axios cancel tokens: requires extra dependency (Axios is forbidden by BOUNDARIES.md) |
+
+---
+
+**End of TECH.md**
