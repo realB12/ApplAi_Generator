@@ -14,7 +14,57 @@ That's why just downloading your vibecode into your IDE will (normally) not work
 
 The good news is, **that the set of these files can be packed by the AI in a ZIP-file (scaffold.zip) that then will be extracted into the Component's root folder** such as ..\S02_GENERATOR\VSC\client. 
 
-Whereas the AI generated scaffold.zip in its standard "VSC\client\AI\KIMI\SCAFFOLD" contains all Scaffolding files (to be used as some kind of **index**), the **PURPOSE** of these files are - als always - defined in the **XCode folder**. 
+Then you have to add the following Stub Components (that will then be overwritten by the AI generated code) into the  *VSC/client/SRC/features/auth/components* folder
+
+1. **WelcomeScreen.tsx**
+```typescript
+export function WelcomeScreen() {
+  return <div>S000 — Welcome Screen (placeholder)</div>;
+}
+```
+
+
+2. **ProtectedRoute.tsx**
+```typescript
+import { ReactNode } from 'react';
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  return <>{children}</>;
+}
+```
+
+3. MainScreen.tsx
+```typescript
+export function MainScreen() {
+  return <div>S002 — Main Screen (placeholder)</div>;
+}
+```
+
+> The scaffolding is a skeleton — it has imports pointing to files the AI will generate. TypeScript checks imports at compile time, not runtime. The stubs give it something to resolve. When the AI vibecodes the real components, it will overwrite these files.
+
+Then you just execute the following bash from within the VSC/client folder to unpack and verify the environment setup. 
+
+
+1. **npm install**:  This lasts a while and will come back with warnings. 
+    * Run -> ***npm audit fix --force*** to fix these issues
+    * Then run  ***npm install -g npm@12.0.2***
+    * Finally run ***npm fund*** to check overall consistency
+
+
+2. npm run typecheck   # Should pass (0 errors)
+
+3. npm run dev         # Opens http://localhost:3000
+
+Open VSC and launch debugger with F5
+```
+
+
+
+Whereas the AI generated scaffold.zip in its standard "VSC\client\AI\KIMI\SCAFFOLD" contains all Scaffolding files (to be used as some kind of **index**), the **PURPOSE** of these files are - as always - defined in the **XCode folder**. 
 
 So, in essence, **the scaffolding can be vibecoded as well**, but is an extra step that needs some extra care where having some sofware developer expertise might be to your advantage. 
 
