@@ -5,7 +5,9 @@ Now implement the ASP.NET Core 9 backend to hold the GitHub PAT and hash passwor
 You are building the **ApplAi Resume Generator** — a single-page React application that helps users generate tailored CVs from a master CV stored as a GitHub Gist.
 
 ## Project stauts
-The client front-end in the VSC/client folder is already done. What is missing is the implementation of the ASP.NET Core 9 backend sourcecode into the VSC/server folder with whatever scaffolding is required to run the Backend (server) together with the frontend (client) from the VS Code Run and Debug Menu. 
+The client front-end in the VSC/client folder is already done and runs in the local VS Code setup.   
+
+What is missing is the implementation of the ASP.NET Core 9 backend sourcecode into the VSC/server folder with whatever scaffolding is required to run the Backend (server) together with the frontend (client) from the VS Code Run and Debug Menu. 
 
 ## Repository to be used
 My Project Repository is on a public Github with URL = https://github.com/realB12/ApplAi_Generator/tree/main
@@ -21,6 +23,17 @@ Before writing ANY code, read these files in this order
 5. DECISIONS.md — Architecture decisions and rationale
 6. PATTERNS.md — Reusable code patterns (MUST follow exactly)
 7. SESSION.md — Session workflow and phase rules
+
+## ACTIONS
+1. Do NOT vibecode yet  
+
+2. Check all the context files first for overall consistency concerning the Backend and report issues.   
+
+3. Make 100% sure, that from the spec.md and tech.md, patterns.md and boundaries.md the client and the server are working together most stable and efficently. When necessary refine the architecture, rules etc. 
+ 
+4. When all issues are clear generate a short description what the Backend is going to do with the architecture it is built and the protocols it is using. 
+
+5. Do the same with all the Authentication process. Explain Authentication to an IT Engineer what EXACTLY is going on here in terms of caching, tokens, securty, where the data is stored and how access rights can be handled and revoked (manually) etc. 
 
 ## Critical Rules
 - **NEVER** deviate from PATTERNS.md without updating the file first.
@@ -39,9 +52,3 @@ Before writing ANY code, read these files in this order
 - **ALWAYS** validate all user input with Zod schemas.
 - **ALWAYS** handle loading states with Spinner (P10).
 - **ALWAYS** handle errors via MessagePopup (SMSG) pattern (P04).
-
-## ACTIONS
-1. Do NOT vibecode yet
-2. Check all the configuration/context files first for overall consistency concerning the Backend and report issues. 
-3. Make 100% sure that the client and the server are working together. 
-3. When all issues are clear generate a short description what the Backend is going to do with the architecture it is built and the protocols it is using. Do the same with all the Authentication process. Explain Authentication to an IT Engineer what EXACTLY is going on here in terms of caching, tokens, et. 

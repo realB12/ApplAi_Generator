@@ -1,0 +1,1460 @@
+{
+  "picture": {
+    "hidden": false,
+    "url": "https://rxresu.me/api/uploads/019f98c4-4993-737c-b190-530cadbdc12d/pictures/1784974712938.jpeg",
+    "size": 80,
+    "rotation": 0,
+    "aspectRatio": 1,
+    "borderRadius": 0,
+    "borderColor": "rgba(0, 0, 0, 0.5)",
+    "borderWidth": 0,
+    "shadowColor": "rgba(0, 0, 0, 0.5)",
+    "shadowWidth": 0
+  },
+  "basics": {
+    "name": "René Andreas Baron",
+    "headline": "Head AI Strategy Implementation",
+    "email": "rene.a.baron@gmail.com",
+    "phone": "+41 79 636 99 55",
+    "location": "6340 Baar, Switzerland",
+    "website": {
+      "url": "",
+      "label": ""
+    },
+    "customFields": [
+      {
+        "id": "019fea2b-bc82-75ac-a49e-ec83ee3f6763",
+        "icon": "champagne",
+        "text": "Swiss (GERMAN, English+++, French++, Spanish+, Russian)",
+        "link": ""
+      },
+      {
+        "id": "019fea3a-81c6-74e9-867a-c52426b0c6b7",
+        "icon": "anchor",
+        "text": "married to Astrid Baron with Lisa 2001, Noah 2004",
+        "link": ""
+      }
+    ]
+  },
+  "summary": {
+    "title": "",
+    "icon": "article",
+    "columns": 1,
+    "hidden": false,
+    "keepTogether": false,
+    "startOnNewPage": false,
+    "content": "<p>Here comes the summary</p>"
+  },
+  "sections": {
+    "profiles": {
+      "title": "",
+      "icon": "messenger-logo",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019fa410-a3e7-7428-bf7c-6d1fec66ed2b",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "network": "LinkedIn",
+          "username": "Rene Baron",
+          "website": {
+            "url": "https://www.linkedin.com/in/rene-baron/",
+            "label": "",
+            "inlineLink": true
+          }
+        },
+        {
+          "id": "019fa411-f0e9-7248-8721-1d0a6c558d2d",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "network": "Github",
+          "username": "Rene Baron",
+          "website": {
+            "url": "https://github.com/realB12",
+            "label": "",
+            "inlineLink": false
+          }
+        }
+      ]
+    },
+    "experience": {
+      "title": "",
+      "icon": "briefcase",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019fa85b-c9ca-7538-a6d7-fcc6830b5594",
+          "hidden": false,
+          "company": "AiAdvantage ",
+          "position": "Technical Advisor & Content Creator  (FL & de bono)",
+          "location": "Lisbon, PT (remote)",
+          "period": "since Dec 2024",
+          "website": {
+            "url": "https://aiadvantage.com/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Advising the core team on building the AIA online platform for AI novices to bring them up to relevance beyond the current AI hype. Currently hosting 85000 paying members and growing. Responsible for industry-relevant content and coaching AI skills towards real-life application.</p>",
+          "roles": []
+        },
+        {
+          "id": "019fdb65-3ba3-713e-9538-11fef0bedf3c",
+          "hidden": false,
+          "company": "Coople (Schweiz) AG",
+          "position": "Diverse Promotions/Gastro/Events  (FL 30%)",
+          "location": "various Switzerland",
+          "period": "since 2022",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>To keep me physically fit, be with people, and hands-on with real life, I work 1-2 day a week as a waiter or barkeeper (among others at Bürgenstock Resorts, National and Gütsch Lucern, Kongresshaus, and The Hall Zurich, etc.), lifeguard, security, rickshaw driver, promoter, and handyman at various (VIP) events all over Switzerland. My claim: every month, something I have never done before :-).&nbsp; 96% of my 253 \"jobs\" are 5-star rated.&nbsp;</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa839-681f-70bd-911e-ed9366ced826",
+          "hidden": false,
+          "company": "Omdena.com ",
+          "position": "Programme Manager and Technical Coaching (de bono)",
+          "location": "India, various Africa & Americas (remote)",
+          "period": "since Feb 2015 ",
+          "website": {
+            "url": "https://www.omdena.com/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>After meeting the CEO in Zurich, I helped grow his virtual OMDENA organization from zero to 2000+ AI engineers doing de bono coaching of new AI talents and assigning them to international NGO projects such as<br>* AI-Powered Crop Yield Prediction from Satellite Imagery for Food Security (various Africa)<br>* AI-Powered Rooftop Solar Assessment eliminates 30-40% of pre-sales survey costs (India).<br>* Detecting Wildfires Using CNN Model with 95% Accuracy (Americas)<br>Here I have grown with the advent of tangible AI when AI was still laughed at. With Omdena, we have always been at the forefront of what was coming next with AI. And this is the main reason I am still working de bono with these wonderful AI enthusiasts around the globe! OMDENA is my real passion &amp; heart program that allows me to draw from a portfolio of proven, implemented, real-life, hands-on AI projects and wonderful, top-notch field experts around the globe.</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa7a0-9df2-77f9-bf5c-41caff3bcccd",
+          "hidden": false,
+          "company": "SpinLaunch Space Solutions",
+          "position": "Technology Consulting (FL 40%)",
+          "location": "Long Beach, USA (remote)",
+          "period": "Apr 2021 - Dec 2023",
+          "website": {
+            "url": "https://www.spinlaunch.com/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Advising the Spinlaunch space company on choosing and setup of collaboration tools for the orchestration of their global network of international experts. Reimplemented the proven Omenda / Swiss Hyperloop approach, but had to switch to NASA in-house tools. Contract terminated prematurely because Spinlaunch has decided to employ US citizens only.</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa798-8405-74e4-9eef-469737084762",
+          "hidden": false,
+          "company": "Upgreat AG",
+          "position": "CTO  Govy.swiss (FL 60%, remote)",
+          "location": "Fehraltorf, CH",
+          "period": "Jul 2019 - May 2022",
+          "website": {
+            "url": "https://www.upgreat.ch/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Evaluation, setup, operation and presentation of a celebrated, AI driven, hybrid shared service center prototype for Swiss eGov administrations. Close partnership with <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Senseforth.ai\">Senseforth.ai</a> to bring state of the art, AI driven service-center technologies to Switzerland. Demo -&gt; <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://www.youtube.com/watch?v=AEPP2rW4aQ0\">https://www.youtube.com/watch?v=AEPP2rW4aQ0</a> (C#, .NET, MS Copilot, SQL, REST, Mulesoft, git, ClickUp a.o.).</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa77e-c55d-72ae-b39e-b947fe723b23",
+          "hidden": false,
+          "company": "Swisspod.ch (de bono)",
+          "position": "CTO a.i. & Program Manager SpaceX sponsored Hyperloop Competition ",
+          "location": "Lausanne, Colorado Springs USA (remote)",
+          "period": "June 2018 - Jan 2022",
+          "website": {
+            "url": "https://www.swisspod.com/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<ul><li><p>Advisor to the CEO (Leadership, Management, Technology)</p></li><li><p>Concept and presentations/lobbying for building a Hyperloop TestTrack in the Canton of Wallis.</p></li><li><p>Building the world's first Hyperloop test-track at EPFL in 1:10 scale, after failing on setting up a  1:1 sclae track in Canton of Wallis for political reasons. </p></li><li><p>5 months part-time CTO ad interim and co-recruiting the new one.</p></li></ul><ul><li><p>Orchestration of 240+ remote-working-experts, material, licences, transport, papers for the annual Elon Musk/SpaceX-sponsored hyperloop competitions -&gt; <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://en.wikipedia.org/wiki/Hyperloop_pod_competition\">https://en.wikipedia.org/wiki/Hyperloop_pod_competition</a>.</p></li><li><p>Supervising simulations and research on more secure &amp; powerful battery packs in a high security area.</p></li><li><p>Advising on relocating SwissPod facilities from CH to Colorado USA.</p></li></ul><p>Orchestrating the processing and tools and cloud-based systems for 240+ remote working experts for participating at Elon Musk's Hyperloop competition and building the world's rst Hyperloop test-track at EPFL after failing on setting up a 1:10 scale track in Canton of Wallis for political reasons. 5 months part-timeCTO ad interim and co-recruiting the new one.</p><p></p>",
+          "roles": []
+        },
+        {
+          "id": "019fa4c8-2d9c-705e-826f-355ec02d9520",
+          "hidden": false,
+          "company": "Kanton St. Gallen",
+          "position": "Project Consultant  (FL 60%)",
+          "location": "St. Gallen",
+          "period": "June 2017 - Feb 2018",
+          "website": {
+            "url": "https://sg.ch",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Review and assessment of all communication channels, websites and apps of 23 departments (e.g. police, health, finance, justice, army, ...) of Kanton St. Gallen and migrating them all under a unique <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://sg.ch\">sg.ch</a> address. Program Office (PMO) setup. Requirements management setup and training. Recommendation for a consolidated IT architecture, app migrations of all departement apps and setup of online communications for all the Kanton. Supporting the PM on recruiting, hiring experts and consulting companies, public bidding, contracting and day to day project management work. (TechStack = Day CMS / Adobe Experience Manager, SPARX Enterprise Architect, Oracle DB, Microsoft .NET Framwork, C#. VB.NET, <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://ASP.NET\">ASP.NET</a> a.o.). Most projects were full-stack E2E solutions remotely developed by smaller \"MittelStand\" companiess. </p><p></p>",
+          "roles": []
+        },
+        {
+          "id": "019fa87d-050b-76d9-ac57-21e24f46704f",
+          "hidden": false,
+          "company": "Innolytics® Innovation",
+          "position": "Workshop Facilitator (FL, on call)",
+          "location": "Serveral Workshops in D, A, CH",
+          "period": "Feb 2017 - Jan 2021",
+          "website": {
+            "url": "https://www.innolytics.de/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Workshop and prodcut setup facilitator for various events and companies in the DACH market.  </p>",
+          "roles": []
+        },
+        {
+          "id": "019fa4c0-3883-7739-96c2-bbfb1e3b14c2",
+          "hidden": false,
+          "company": "Netlive ",
+          "position": "FullStack Search-, Chat- & Voice-Bot Developer (FL 80%)",
+          "location": "St. Gallen, CH",
+          "period": "Jan 2016 - Nov 2018",
+          "website": {
+            "url": "https://netlive.ch",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Building voice-enabled conversation chat-bots for Sympany (insurance) and Rhomberg Group (construction). Winning the<strong> IBM Bestseller Innovation Award 2017 </strong>for <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://netlive.ch\">netlive.ch</a>.<br>(Angular, Meteor, React, Aurelia, JavaScript, HTML, CSS, Node.js, Express, MongoDB, SQL, MySQL, Redis, Git-Tools, IBM Cloud Services, IBM Watson, Webpack, …).<br>Building IBM Watson and IBM Cloud based showcase prototypes. Providing lab exercises for learners. I have organized and held product and use case demonstrations at several IBM events in the DACH region.</p><p></p>",
+          "roles": []
+        },
+        {
+          "id": "019fa499-545e-76e7-8da7-336bac149b35",
+          "hidden": false,
+          "company": "Netrange AG",
+          "position": "Software Engineering .NET & Support (FL 60%)",
+          "location": "St. Gallen Switzerland",
+          "period": "March 2006 - Nov 2019",
+          "website": {
+            "url": "https://netrange.ch",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Technical redesign and implementation of the leading, web-based “CIRS” Incident Reporting and Management System for the Swiss, German and Austrian HealthCare industry (Microsoft SharePoint, .NET, ASP.NET, C#, SharePoint, Dynamics CRM, MS SQL a.o) . Product still live on <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://meldecenter.ch/\">https://meldecenter.ch/</a></p>",
+          "roles": []
+        },
+        {
+          "id": "019fa495-4bc2-70d9-be5f-9575213bd73f",
+          "hidden": false,
+          "company": "Goalscape.com",
+          "position": "Technical Advisor / Software Engineering (FL 40%)",
+          "location": "Remote, D, UK, Australia",
+          "period": "Jul 2006 - Dec 2008",
+          "website": {
+            "url": "https://Goalscape.com",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p><strong>Development of Goalscape Goalsetting Software</strong></p><p style=\"text-align: left;\">Technical review for performance &amp; scalability of their existing solutions. Fixing scalability issues. Concept for web-migration. Development of core components (Adobe AIR, Flex, Action Script, mySQL, Node, Drupal). The product is still  in use today -&gt; check on <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://goalscape.com/\">https://goalscape.com/</a></p>",
+          "roles": []
+        },
+        {
+          "id": "019fa41e-6c1b-71df-ab0e-02c466738105",
+          "hidden": false,
+          "company": "Dow Europe (Chemicals) ",
+          "position": "Technical Project Leader a.i, 4 DR  (FL 60%)",
+          "location": "Horgen, Switzerland",
+          "period": "December 2005 - August 2007",
+          "website": {
+            "url": "https://ch.dow.com/en-us.html",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Responsibility for technical prototype, development framework and development of core components of a KPI-driven idea- and innovation management program (Adobe AIR, Flex, Action Script, JS, HTML, CSS, .NET, C#, MS SQL). </p>",
+          "roles": []
+        },
+        {
+          "id": "019fa413-810f-7448-a501-189238eef9b4",
+          "hidden": false,
+          "company": "Toshiba ",
+          "position": "Advisor Knowledge Management (FL 80%)",
+          "location": "Kanagawa, Japan (on site & remote)",
+          "period": "May 2005 - February 2006",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Design &amp; prototype of a centralized business rules engine. Design &amp; implementation of a global knowledge and patent database (Sparx Enterprise Architect, VB.NET, MS SQL)</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa8f1-f46a-7430-a574-0bdef8825fc5",
+          "hidden": false,
+          "company": "Baron Solutions",
+          "position": "Owner",
+          "location": "Zürich / Baar",
+          "period": "since 2005",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Having now 2 kids and my wife back into the corporate world with a 100% job, I have decided to leave the corporate world and work as an independent freelance ad interim IT project leader, program office manager &amp; consultant, open-source contributor, and workshop facilitator for many international organizations mentioned above, drawing from my experiences. <br>To live my own engineering passion, I have worked as a freelance full-stack web developer for IBM, Goalscape, Netlive, Netrange, Kanton St. Gallen, and others (.NET, C#, SQL, JS, HTML, Node, React, Go, SQL, GIT, TDD, CI/CD-automation, early AI tools adopter) on various initiatives and projects mentioned above.<br>From there I have finally combined the two separate paths into consulting and troubleshooting for leading conversational AI providers such as <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Senseforth.ai\">Senseforth.ai</a> (India), <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Cognigy.ai\">Cognigy.ai</a> (DE), and IBM Switzerland with a focus on ready-made conversational components (ChatBots) and AI integration.</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa4d0-a774-737b-8a44-1276393dc0fd",
+          "hidden": false,
+          "company": "Hogg Robinson Group HRG, (5500+ employees, 14 DR))",
+          "position": "Head Program Office Central Europe",
+          "location": "Farnborough (UK), Cologne various USA & Europe",
+          "period": "Jan 2004 - Apr 2005",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Coordinating the merger of Kuoni Business Travel Unit (BTI Central Europe, 1650 employees) with HRG Group. Overlooking IT System transitions from Kuoni platform to HRG systems (smoothly done in 2 days after 2.5 years preparation work). Technical migration &amp; integration lead (e.g. SAP, Reservation Systems). Heading the strategic HRG Programme Office. Enforcement of project standards. Foundation of Kuoni independent IT departments for BTI Switzerland, Germany and Austria after separation from Kuoni Group. Reporting to the CEO.</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa4f1-b005-74ce-8eb6-96bd61f5f835",
+          "hidden": false,
+          "company": "Business Travel International BTI (8200+ employees)",
+          "position": "Head Program Office",
+          "location": "Europe with permanent office in Zürich & Cologne",
+          "period": "Sept 2002 - Dec 2003",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Setup and operation of a global Programe Office for BTI international. Scouting for new travel related technologies. Lead of global bids. Technical lead for the Next Generation Business Platform “P2”. Coordination of a corporate cost saving program. Due diligence and technical planning for selling Kuoni BTI to the HRG Group. Leading the program for  full end-to-end digitalization of business travel processing for global Top-500 Corps (eg. Siemens, $600 million annual travel expenses).</p><p></p>",
+          "roles": []
+        },
+        {
+          "id": "019fec52-35d1-7191-b91b-223faf6c9f92",
+          "hidden": false,
+          "company": "Kuoni  Group",
+          "position": "Head WebServices",
+          "location": "Zurich",
+          "period": "2000 - 2002",
+          "website": {
+            "url": "https://en.wikipedia.org/wiki/Kuoni_Travel",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Replacing the 27 individual websites of the Kuoni Group with&nbsp; a centrally managed web-platform. Project-lead for making internal reservation systems web-bookable. Consulting the Kuoni Board and country organisations on newest webtrends and technologies. Managing all web-related service-contracts and external providers. 5 direct reports. Reporting to the CIO. Regular business trips to of ces in Europe, major Asian countries and USA.&nbsp;</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa4f3-e286-758b-828d-0ed104e77823",
+          "hidden": false,
+          "company": "Kuoni Travel Ltd, global (6000+ employees, +-10DR)",
+          "position": "Head International Projects",
+          "location": "Zürich, Japan, Korea, India, USA, Europe",
+          "period": "Jan 1998 -  Aug 2002",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<ul><li><p>Head WebServices Kuoni Group (Zurich, 12 DR)</p></li><li><p>Head International Projects (Zurich, global, 4 DR)</p></li><li><p>Global Lead of Y2K Program (Zurich, Cologne, global, 8DR)</p></li><li><p>Technical Due Dilligence for various M&amp;As in Asia and USA (global ad hoc)</p></li><li><p>Head of IT operations for 78 offices in 33 countries (Zurich, global +- 40 DR)</p></li><li><p>Lead “Architecture &amp; Standards” (Zurich, Technical Advisor)</p></li><li><p>CTO European Travel Portal (Kloten, 1st Kuoni Startup with 12 employees)</p></li></ul><p></p>",
+          "roles": []
+        },
+        {
+          "id": "019fa4fd-1533-7375-ae94-00dad8966bd8",
+          "hidden": false,
+          "company": "Kuoni Incoming Services, global (800employees, 38 DR)",
+          "position": "Head Technology",
+          "location": "Zürich, Japan, Korea, Thailand, USA, u.a.",
+          "period": "Apr 1993 - Dec 1997",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Rollout and operating IT infrastructure for 52 offices in 33 different countries (Japan, USA, HongKong, Seoul, Taipeh, Singapore, Bankok, Western-Europe). First large-scale Client/Server infrastructure in many countries. Founding and leading remote support teams (without Internet then :-)) </p>",
+          "roles": []
+        },
+        {
+          "id": "019fa500-855a-769d-8b44-fb3da12e421c",
+          "hidden": false,
+          "company": "Kuoni Reisen AG (1200 employees, 12 DR)",
+          "position": "PM & Group Leader Software Development",
+          "location": "Zürich, CH",
+          "period": "Okt 1990 - March 1993",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Building the corporation’s core reservation systems and tools still in use today!</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa501-fdae-74e7-a469-624925059856",
+          "hidden": false,
+          "company": "Kuoni Reisen AG (1200 employees, 7 DR)",
+          "position": "Project Lead & Programmer (Mainframes)",
+          "location": "Zürich, CH",
+          "period": "Dez 1988 - Sept 1990",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Building KOMET, Kuoni's core travel-reservation and management system on an IBM Mainframe</p>",
+          "roles": []
+        },
+        {
+          "id": "019fa505-694b-71cd-a209-8c3dcde52ee6",
+          "hidden": false,
+          "company": "Gruppe für angewandte Informatik GfAI, (129 employees)",
+          "position": "Software Developper IBM Mainframe",
+          "location": "Bern, CH",
+          "period": "Dez 1988 - Sept 1990",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p style=\"text-align: left;\">Software for the financial sector (asset management and HR tools) on IBM Mainframe (CSP)</p>",
+          "roles": []
+        },
+        {
+          "id": "019ff024-5ec3-7773-b7db-441ebd389657",
+          "hidden": false,
+          "company": "MYRASIS",
+          "position": "CTO",
+          "location": "Zurich",
+          "period": "2014 ongoing",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Consulting and coding for leading Conversational AI providers such as <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Senseforth.ai\">Senseforth.ai</a>, <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Cognigy.ai\">Cognigy.ai</a>, IBM Watson, <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://aiaibot.ch\">aiaibot.ch</a> with a focus on process implementation, skills and dev teams developments. Started 2014 with E2E Implementing a prototype for <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Sympany.ch\">Sympany.ch</a> (IBM Cloud, Watson Services, JS, Node, React, MySQL, MongoDB) which has won the Swiss IBM innovation award for <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Netlife.ch\">Netlife.ch</a>. Deep evaluation  and building prototypes of <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Cognigy.ai\">Cognigy.ai</a> and <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://senseforth.ai\">senseforth.ai</a> platform to choose for the <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Govy.swiss\">Govy.swiss</a> project. Permanent member of the Swiss group of Conversational AI builders. Since then, doing consultancy for <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Cognigy.ai\">Cognigy.ai</a>, and helping <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://senseforth.ai\">senseforth.ai</a> on the setup of their product portfolio and optimizing their GitLab driven CI/DC pipeline.</p><p>Currently working on the standardization of Lighting Payments Negotioations and Settlements  of autonomous AI agents. </p>",
+          "roles": []
+        }
+      ]
+    },
+    "education": {
+      "title": "",
+      "icon": "graduation-cap",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019fe5eb-9466-77d9-9ce9-b0790dc1ad63",
+          "hidden": false,
+          "school": "ETH Zurich",
+          "degree": "",
+          "area": "Computer Science",
+          "grade": "",
+          "location": "Zurich",
+          "period": "1984 -1988",
+          "website": {
+            "url": "https://ethz.ch/en.html",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Terminated after 2nd diploma for highly paid job offers where I have been tasked with newest technology whereas ETH was lacking  10+ years behind. </p>"
+        },
+        {
+          "id": "019febf7-b3ac-7204-bfc0-2477b0b36954",
+          "hidden": false,
+          "school": "Ecole Polytechnique",
+          "degree": "Diplome Electronique Physique I",
+          "area": "Neuchatel",
+          "grade": "",
+          "location": "Neuchatel (Switzerland)",
+          "period": "1983-1984",
+          "website": {
+            "url": "https://www.epfl.ch/about/campus/neuchatel-en/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>First seminar on MicroElectronics in Switzerland as a preparatoin for ETH Zurich and training of the French language. </p>"
+        }
+      ]
+    },
+    "projects": {
+      "title": "",
+      "icon": "code-simple",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019ff02d-00fd-7638-887f-a40a07389308",
+          "hidden": false,
+          "name": "BaronWallet :: Crypto Security and Mining Initiative",
+          "period": "2022 ongoing",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Created my own CryptoWallet to challenge and test my deep understanding of Bitcoin and Etherium core technologies, tokenomics and <strong>blockchain resp. </strong>decentralized and distributed digital ledger in general. Running my own Crypto Mining Infrastructure (BitAxe). </p>"
+        },
+        {
+          "id": "019ff031-6c5b-72b8-a21a-4da5f192244b",
+          "hidden": false,
+          "name": "W=I=R=E for improved online communiation & debating",
+          "period": "2021 ongoing",
+          "website": {
+            "url": "https://www.kialo-edu.com/deKi",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Working on a conceptual framework for better, safer and more effective online communication and debating systems. Coperation with and consulting for Kialo. Active contribution to Argufight .com and advisor to the CEO. </p>"
+        },
+        {
+          "id": "019ff03d-dfbd-72fd-96c6-29e811ab1dcd",
+          "hidden": false,
+          "name": "GovySwiss ::  Building Switzerland's e-Gov Service Center",
+          "period": "2019-2021",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Design &amp; implementation of an AI-driven regional e-Gov Service Center. Reviewing &amp; augmenting the Business Case and co-founding the <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Govy.swiss\">Govy.swiss</a> startup. Evaluation of various forms of process automation and next generation UX Designs. Implementation of all the company's tech infrastructure on premise and multi-cloud-based. Careful evaluation and test-running cloud platforms (Azure, GCP, IBM Cloud, Oracle Platform, AWS) and deciding for an GCP &amp; Azure mix. Evaluation of state of the art hybrid&nbsp;Chat/Voice-Bot providers and best practices in the field of conversational AI. Integration of SwissID. Building a generator for integrating (Elastic) Site-Search results into chat- and voice-bot-frameworks (patent pending). Prototyping several e-Gov use cases (change of residence, train ticket reservation, availability &amp; appointment etc.). Presenting the MVP to Kanton Schaffhausen and city of Bülach. Promoting the solution at various national, regional and local e-Gov-events, tech-fairs and the global conversational AI community.</p>"
+        },
+        {
+          "id": "019fec8a-aef2-744e-8c5b-93ee335628a5",
+          "hidden": false,
+          "name": "WebConsolidation Kanton St. Gallen (sg.ch)",
+          "period": "June 2017 - Feb 2018",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Review and assessment of all communication channels, websites and apps of 23 departments (e.g. police, health, finance, justice, army, ...) of Kanton St. Gallen under a unique <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://sg.ch\">sg.ch</a> address. PMO setup. Requirements management installation. Recommendation for a consolidated IT architecture, app migrations of all departements and setup of online communications for all the Kanton. Supporting the PM on recruiting, public bidding, contracting and day to day project management work. (Day CMS / Adobe Experience Manager, SPARX Enterprise Architect, Oracle DB, a.o.). Most projects were full-stack E2E solutions remotely developed in small international teams.</p>"
+        },
+        {
+          "id": "019ff064-6ca4-70e5-b6ea-efa1328f0a23",
+          "hidden": false,
+          "name": "Hyperloop Pod Competition ",
+          "period": "2017 - 2019 Lausanne / Los Angeles",
+          "website": {
+            "url": "https://en.wikipedia.org/wiki/Hyperloop_pod_competition",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Orchstrating the SwissPod's participation at Eleon Musk's sponsored HyperLoop Competition on the HyperLoop/Hypertube test track in Hawthorn (CA). </p>"
+        },
+        {
+          "id": "019fec7c-4171-708c-9f10-8fb1c8a0e813",
+          "hidden": false,
+          "name": "Baron Solutions :: founding and running my own company",
+          "period": "2006 till present",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>In 2006, my wife and I have switches roles where she continued her career with a 100% job as Head of Compensation at Valora, Takeda and Sonova, whereas I started looking after our two kids (Lisa 2001, Noah 2004) and working 60% as freelance software-engineer and technical project leader on various national and international projects. <br>For this reason I have registered \"Baron Solutions\" as a legal entity situated at Technopark Zurich. </p>"
+        },
+        {
+          "id": "019fec75-9bf0-728d-9fea-c4fb2e4d6c8b",
+          "hidden": false,
+          "name": "Reservation System vor SOTC India",
+          "period": "2002-2005",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Project Lead and technical consulting for the evaluation and building of SOTC India's (aquired by the Kuoni Group) first \"eFRAME\" Reservation System useed by 650+ employees. Large scale Mircrosft Client-Server system (MS .NET (Beta!), C#, MS SQL, Oracle DB and interfaces to AS400. Supervising the configruation of SAP system that was introduced by a third partry provider.</p>"
+        },
+        {
+          "id": "019fec67-b08f-7785-9ba8-5b6736dccbbd",
+          "hidden": false,
+          "name": "PL Kuoni Online Travel Management System ",
+          "period": "2001-2002",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Project-lead for making internal reservation systems bookable over the groups new consolidated Web-Platform. Consulting the Kuoni Board and country organisations on newest webtrends and technologies. Managing all web-related service-contracts and external providers. 5 direct reports. Reporting to the CIO. Regular business trips to offices and tech-fares in Europe, Asia and USA.</p>"
+        },
+        {
+          "id": "019fec72-b7a2-73bd-87c7-f5746615f023",
+          "hidden": false,
+          "name": "Allied t-Pro USA Aquisition",
+          "period": "2001",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Prject Lead for Technical Due Dilligence, System Consolidation, Setup and Training of SAP for the new aquired Allied t-Pro USA business unit.</p>"
+        },
+        {
+          "id": "019ff9d5-e375-733f-aa80-da69395b97bf",
+          "hidden": false,
+          "name": "VISA application System for SOTC India / US Ambassady",
+          "period": "2001-2002",
+          "website": {
+            "url": "https://www.vfsglobal.com/en/general/milestones.html?from_section=0",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Idea and project owner for creating the first, award winning online VISA application system in India as a joint venture with the US ambassy. This business model resulted in the foundation of <span>VFS Global</span> spin-off, that has earned the Kuoni Group millions when operating VISA application in  middle east countries. Long-term relationship with C-Level of both SOTC and VFS Group. </p>"
+        },
+        {
+          "id": "019fec66-873e-7235-a8c2-15210cb00b6f",
+          "hidden": false,
+          "name": "PL Web-Consolidation Kuoni Group",
+          "period": "2000-2002",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Replacing the 27 different static websites of the Kuoni group with&nbsp; a centrally managed web-platform. </p>"
+        },
+        {
+          "id": "019fec64-69d2-730e-bd19-3d32a3ec5d34",
+          "hidden": false,
+          "name": "Year2000 Transformation Program for Kuoni Group",
+          "period": "1998-2000",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Y2K Programme-setup and program lead to ensure that all legal entities of the Kuoni Group located in 33 countries have assessed their systems for Year2000 readiness according to KPMG provided best practices. <br>Responsible for legal&nbsp; Y2K compliance in behalf of the group's CEO.&nbsp; Leading the Y2K-responsibles in all 49 business units. 8 direct reports. Reporting to the Board of Kuoni Group</p>"
+        },
+        {
+          "id": "019ff9f1-3e7a-73f8-919a-50788fb5cff8",
+          "hidden": false,
+          "name": "Cancelled OS/2 for Windows",
+          "period": "1996",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Whereas the Kuoni Group has declard to go with IBM's OS/2, I have fighted to proceed with Windows for all new upcoming projects weithnig the KUONI Group - namely the new reservation system for Incoming Servicdes (IN2000). Powered by Microsoft Switzerland's Marketing and the Microsoft Redmont core engineering teams in the advent of .NET, I was able to convince all the Kuoni group to cancel OS/2 in favor for Microsoft.  This made me quite a name in the Swiss IT sector. </p>"
+        },
+        {
+          "id": "019fec6d-6009-7788-8413-b837da08d2c4",
+          "hidden": false,
+          "name": "PL New Travel system for Kuoni Incoming Services",
+          "period": "1994-1998",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Team- and project lead for implementing \"IN2000\", the primary travel system for Kuoni Incoming Services as one of the first enterprise-grade Client-Server Systems in Switzerland and the first  one in Japan in close cooperation with top experts from NCR (hardware) and Microsoft USA testing their .NET framework in a real productive environment. Hands on installation, training and support in 33 offices around the globe with nothing more than a modem :-).</p><p>Native C on Windows PCs with MS SQL Server.</p>"
+        },
+        {
+          "id": "019fec6c-0b5d-7751-94c8-677d3d47d2bf",
+          "hidden": false,
+          "name": "PL Building Kuoni's first  Travel Management Systems ",
+          "period": "1990-1994",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Team-lead for implementing and maintaining Kuoni's primary reservation system (KOMET) and dossier-management system (Kudos) on IBM Mainframes from scratch (Cobol, IBM DB)</p>"
+        }
+      ]
+    },
+    "skills": {
+      "title": "",
+      "icon": "compass-tool",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019ff09c-7cbd-70ad-acfe-dafda7c68528",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "VibeCoding",
+          "proficiency": "",
+          "level": 4,
+          "keywords": [
+            "Cursor",
+            "Replit",
+            "Lovable",
+            "Prompting",
+            "Model Context Protocol (MCP)",
+            "Antigravity",
+            "ChatGPT",
+            "Perplexity"
+          ]
+        },
+        {
+          "id": "019fe60f-7b6e-71d0-b76e-c7234fc79d54",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "IT Architectures",
+          "proficiency": " IBM and Google Cloud Platform certified",
+          "level": 3,
+          "keywords": [
+            "Kubernetes",
+            "MicroServices",
+            "IBM Cloud",
+            "Google Cloud"
+          ]
+        },
+        {
+          "id": "019fe613-42d0-7763-a94d-4f18a2bf4e45",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Software Engineering Methodology",
+          "proficiency": "",
+          "level": 4,
+          "keywords": [
+            "CI/CD",
+            "Git-Tech",
+            "MicroServices",
+            "JavaScript",
+            "Test Driven Development (TDD)",
+            "UML2",
+            "StoryBook",
+            "Functional Programming",
+            "SCRUM",
+            "Agile Methodologies"
+          ]
+        },
+        {
+          "id": "019feb71-12c4-766a-bc3b-19d8cf26fbeb",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Software Engineering Tools",
+          "proficiency": "",
+          "level": 5,
+          "keywords": [
+            "C#",
+            "Go",
+            "Node.js",
+            "React",
+            "Redux",
+            "JavaScript",
+            "TypeScript",
+            "Solidity",
+            "ASP.NET",
+            "Selenium Framework",
+            "Open Web",
+            "Vue.js",
+            "Firebase",
+            "Algolia",
+            "Meteor",
+            "SQL",
+            "MongoDB",
+            "mySQL",
+            "Google Datastore",
+            "Neo4j",
+            "REST",
+            "SOAP",
+            "HTTP",
+            "TCP/IP",
+            "Sockets",
+            "Mulesoft",
+            "Swagger",
+            "Docker",
+            "Kubernetes",
+            "Terraform",
+            "OAuth",
+            "Google Cloud Platform (GCP)",
+            "IBM Cloud",
+            "Microsoft Azure",
+            "Amazon Web Services (AWS)",
+            "Git Expert",
+            "Test driven development (TDD)",
+            "cypress",
+            "CI/CD pipelines",
+            "Webow",
+            "Bash",
+            "Powershell",
+            "WebPack",
+            "npm",
+            "GitKraken",
+            "Visual Studio Code",
+            "Goland IDE",
+            "Vite"
+          ]
+        },
+        {
+          "id": "019fe62b-e64c-7048-98d8-46d247b166aa",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Project Management",
+          "proficiency": "30+ years of successful corporate IT project leads",
+          "level": 5,
+          "keywords": [
+            "PMBOK",
+            "HERMES 2022",
+            "PRINCE2",
+            "SCRUM",
+            "Agile",
+            "Requirements Management",
+            "Scope Management",
+            "Project Communication",
+            "Remote Project Lead",
+            "Risk Management",
+            "Budgeting",
+            "Cost Control",
+            "Team Laed",
+            "Stakeholder presentations",
+            "SPARX Enterprise Architect",
+            "ClickUp",
+            "SAP",
+            "Contingency Planning",
+            "Recruiting",
+            "Working with Consultants and Externals",
+            "Project Reviewing",
+            "Workplace Design",
+            "Product Testing",
+            "Outlook",
+            "MS Teams",
+            "MS Office",
+            "Excel",
+            "MS Word",
+            "HUGO",
+            "AI-Tools",
+            "Rational Unified Process (RUP)",
+            "Kanban",
+            "SAFE",
+            "Design Thinking",
+            "Innolytics",
+            "CMMI"
+          ]
+        },
+        {
+          "id": "019feb6c-2165-71d8-836f-f4326dab25f0",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "(Remote) Collaboration Tools",
+          "proficiency": "",
+          "level": 0,
+          "keywords": [
+            "Clickup",
+            "MS Teams",
+            "Mural",
+            "StoryBook",
+            "Disqus",
+            "HUGO",
+            "MarkDown Monster",
+            "MS Office",
+            "SPARX Enterprise Architect",
+            "Jira",
+            "Asana",
+            "MS Project",
+            "Trello",
+            "SharePoint",
+            "Git",
+            "GitHub",
+            "GitLab",
+            "Jetbrain SPACE"
+          ]
+        },
+        {
+          "id": "019feb74-e309-7066-aa5f-397ade662c83",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Documentation",
+          "proficiency": "",
+          "level": 5,
+          "keywords": [
+            "MS Of ce",
+            "Adobe Photoshop & Illustrator & Robohelp",
+            "Af nity Publisher & Designer",
+            "Lucid Chart",
+            "Madcap FLARE",
+            "Markdown Monster",
+            "Mermaid",
+            "Markdown",
+            "MS Word",
+            "Powerpoint",
+            "Excel",
+            "Goalscape",
+            "TheBrain",
+            "HUGO",
+            "Jekyll"
+          ]
+        },
+        {
+          "id": "019ff09f-5101-7187-b7f0-5e95a110c147",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Conversational AI Leader",
+          "proficiency": "",
+          "level": 5,
+          "keywords": [
+            "IBM Watson",
+            "Cognigy.ai",
+            "Hosting various AI panels",
+            "Senseforth.ai"
+          ]
+        },
+        {
+          "id": "019ff0a8-c4bb-75c1-96aa-f11957a397d3",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Copiloted Engineering",
+          "proficiency": "",
+          "level": 5,
+          "keywords": [
+            "Microsoft Copilot",
+            "GitHub Copilot",
+            "MS Code AI"
+          ]
+        }
+      ]
+    },
+    "languages": {
+      "title": "",
+      "icon": "translate",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019febf4-d295-74c3-b0c2-d413ba706f1c",
+          "hidden": false,
+          "language": "GERMAN",
+          "fluency": "Mothertongue",
+          "level": 5
+        },
+        {
+          "id": "019febf5-2acf-775c-a3de-6cf6d8112eb2",
+          "hidden": false,
+          "language": "English",
+          "fluency": "",
+          "level": 5
+        },
+        {
+          "id": "019febf5-8f2d-7562-8ed2-892f0a664b84",
+          "hidden": false,
+          "language": "French",
+          "fluency": "Matura & 1 year at University Neuchatel (Ecole Polytechnique)",
+          "level": 4
+        },
+        {
+          "id": "019febf5-d5cb-729b-ba71-c918a0ad92eb",
+          "hidden": false,
+          "language": "Spanish",
+          "fluency": "",
+          "level": 2
+        },
+        {
+          "id": "019febf6-05cc-7718-aa0d-cdce9a6907b3",
+          "hidden": false,
+          "language": "Russian",
+          "fluency": "learning",
+          "level": 1
+        }
+      ]
+    },
+    "interests": {
+      "title": "",
+      "icon": "football",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019fefe1-4b22-77bb-bfca-20145de227ae",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Arnis (national martial art/sport of the Philippines)",
+          "keywords": []
+        },
+        {
+          "id": "019fefe3-7829-76a9-8db7-eff15dd46eaa",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Dog (Rhodesian Ridgeback)",
+          "keywords": []
+        },
+        {
+          "id": "019fefe2-91dd-763f-aae6-a3256c209fa4",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Chess (ELO 1750)",
+          "keywords": []
+        },
+        {
+          "id": "019fefe3-2227-736d-b0d6-692e55016101",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Skate/Longboarding",
+          "keywords": []
+        },
+        {
+          "id": "019fefe4-ab4c-737d-9b4b-a8e98115825e",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Outdoor",
+          "keywords": [
+            "Hiking",
+            "Climbing",
+            "Bushcrafting",
+            "Mushrooms",
+            "Eatable Plants",
+            "Cooking",
+            "Van-Life"
+          ]
+        },
+        {
+          "id": "019fefe6-3e48-771a-8cea-bf4447e25499",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Sports",
+          "keywords": [
+            "Fitness",
+            "Rope Skippng",
+            "Skateboarding",
+            "Boxing",
+            "Swimming",
+            "SUP",
+            "Vita-Parcours (with dog)",
+            "Yoga"
+          ]
+        },
+        {
+          "id": "019fefec-ef99-70c4-8dfc-0ac3e3be27d4",
+          "hidden": false,
+          "icon": "acorn",
+          "iconColor": "",
+          "name": "Certified Esalen Massage Instructor",
+          "keywords": []
+        }
+      ]
+    },
+    "awards": {
+      "title": "",
+      "icon": "trophy",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019ff073-2a1e-731b-a494-7040df3a8000",
+          "hidden": false,
+          "title": "3rd  (2nd time) at Elon Musk sponsored Hyperloop Competition 2019",
+          "awarder": "Swisspod.ch for EPFL Lausanne",
+          "date": "July 2019",
+          "website": {
+            "url": "https://in Hawthorne, California",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>As CTO a.i. I have been massively inovolved to coordinate material, transportation, logistics, custom papers,  licences, travel and participations for the competition weeks and assisting the team during the competition for all non-technical matters. </p>"
+        },
+        {
+          "id": "019ff06e-e9eb-736a-8539-ba3b5f18d7ab",
+          "hidden": false,
+          "title": "3rd at Elon Musk sponsored Hyperloop Competition 2018",
+          "awarder": "Swisspod.ch for EPFL Lausanne",
+          "date": "July 2018",
+          "website": {
+            "url": "https://in Hawthorne, California",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>As CTO a.i. I have been massively inovolved to coordinate material, transportation, logistics, custom papers,  licences, travel and participations for the competition weeks and assisting the team during the competition for all non-technical matters. </p>"
+        },
+        {
+          "id": "019ff074-4733-724c-9335-c2b8b170d628",
+          "hidden": false,
+          "title": "IBM New Innovation Award 2018",
+          "awarder": "Netlive AG",
+          "date": "12.4.2018",
+          "website": {
+            "url": "https://www.it-markt.ch/news/2018-04-12/ibm-kuert-schweizer-partner",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>The award recognized the Swiss company's work in artificial intelligence and pioneering digital solutions. I have won the award for Netlive AG, for building one of Switzerland's first AI-driven conversational chabot prototypes for Sympany.ch. </p>"
+        },
+        {
+          "id": "019ff9e2-e1f2-7509-b91d-ce52bbe36790",
+          "hidden": false,
+          "title": "Best Process Improvement in Service and Transaction Project",
+          "awarder": "International Quality & Productivity Centre (IQPC) ",
+          "date": "2009",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Received International Quality &amp; Productivity Centre (IQPC) award for “Best Process Improvement in Service and Transaction Project” for VFS Global at the IQPC Annual Lean Six Sigma &amp; Process Improvement Summit 2009 at Orlando, USA in my role as initiator and sponsor of the initial business model (developed for KUONI Group owned SOTC India in 2001 and technology consultancy throughout the years). </p><p></p>"
+        }
+      ]
+    },
+    "certifications": {
+      "title": "",
+      "icon": "certificate",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019fe5f2-931a-7263-a9e9-63eeab86c186",
+          "hidden": false,
+          "title": "Master Conversational AI",
+          "issuer": "Conversation Design Institute, Amsterdam",
+          "date": "12.11.2020",
+          "website": {
+            "url": "https://www.conversationdesigninstitute.com/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>This was not just following the globally most advanced course for Conversational AI then, but a highly appreciated interaction and sharing my hands-on experiences with tutors and participiants where I was able to add real life experiences to the otherwise more theoretical stuff. </p>"
+        },
+        {
+          "id": "019fe5f8-3485-77e7-b77f-23157d6289c8",
+          "hidden": false,
+          "title": "Project & Programme Management",
+          "issuer": "PMI.org",
+          "date": "since 1992 ongoing",
+          "website": {
+            "url": "https://www.pmi.org/",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Various certifications on Projekt- und Programme-Management, including PMBOK, HERMES 5.1 &amp; 2022, PRINCE2, SCRUM, and Agile Methodology. Close and in-person contact with Alistair Cockburn (author of the \"Agile Manifesto\") since 1994, counterreading and commenting on his output.</p>"
+        },
+        {
+          "id": "019fe61a-5bda-709f-8562-446295bd855a",
+          "hidden": false,
+          "title": "Leadership I, II und III",
+          "issuer": "Dale Carnegie Training",
+          "date": "1994-1996",
+          "website": {
+            "url": "https://www.dalecarnegie.com/en",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>On-site workshops covering various leadership topics with hands-on tasks on the job and experience sharing and peer reviews upon actual work.</p>"
+        },
+        {
+          "id": "019fe623-8319-7323-a992-2e612ef07f84",
+          "hidden": false,
+          "title": "Public Speaking",
+          "issuer": "Dale Carnegie Training",
+          "date": "",
+          "website": {
+            "url": "https://www.dalecarnegie.com/en",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": ""
+        },
+        {
+          "id": "019fe637-5636-742a-a619-5a4ac5669b8b",
+          "hidden": false,
+          "title": "Cybersecurity for Leaders",
+          "issuer": "MIT Sloan Programs",
+          "date": "2025 ongoing",
+          "website": {
+            "url": "https://executive.mit.edu/course/cybersecurity-for-leaders",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p></p>"
+        },
+        {
+          "id": "019febe9-fc3a-7617-a35a-adebfb675757",
+          "hidden": false,
+          "title": "Software Engineering Certificates",
+          "issuer": "",
+          "date": "2005 - 2020",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Certified Software Engineering (various off/online courses on TDD, CI/CD, Cyber-Security,  MicroServices, Agentic Programming, various Microsoft Certificates on .NET and  Azure Cloud Services, GitHub Action, GitHub Administration, GitHub Certified Agentic AI Developer, GitHub Copilot, GitHub Foundations</p>"
+        },
+        {
+          "id": "019fefd8-d860-72bd-ab71-de9041c7e349",
+          "hidden": false,
+          "title": "Various Courses completed on LinkedIn",
+          "issuer": "LinkedIn",
+          "date": "ongoing",
+          "website": {
+            "url": "https://www.linkedin.com/learning/me/my-library/completed",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Certificates for: Goolge Cloud Foundations, Google Cloud Data and Storage Foundations, Getting Started with Google Cloud, Google Cloud Security: Tools and Services, Learning PowerShell, HTML: Metadata in the Head, Note Taking for Business Professinals, Artificial Intelligence Essentials, Learning Go, Toolkit for better Feedback, Transformational Change, Design Thinking, Prototyping, Creative Inspirations, Agile Product Owner Role, Agile Product Owner Role, Node.js Essentials, Docker Training, DevOps Foundations, Strategic  Communication, Program Management, Information Security, Application Security, Penetration Testing, </p>"
+        }
+      ]
+    },
+    "publications": {
+      "title": "Core Competences & Preferences",
+      "icon": "books",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019ff087-92ca-75f8-8e2a-2479cf116d88",
+          "hidden": false,
+          "title": "Technology Scouting & Prototyping. ",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>I love and I am excellent at scouting tech-driven opportunities and to proactively suggest strategy-aligned ideas to various stakeholders. </p><p>From there I can provide the hands-on, organisational and technical routine to get such initiatives implemented:  from prototype till production-ready solution.</p><p>Implementation wise I can draw from external field experts, partners and IT-workers at hand, I know from many successfully delivered enterprise-grade enterprise- and Open-Source-projects.</p><p>Last but not least I am using AI best practices and tooling since 2018 wherever it makes sense: from large scale Project organisation down detailed issue analysis, conceptual work and  agentic software developement. <br><br>All in all I am your best candiate to compile your prototypes end-to-end and finally morph them into productive and maintainable solutions. </p>"
+        },
+        {
+          "id": "019ff08f-7807-70c7-8d3f-4d25b19d94dd",
+          "hidden": false,
+          "title": "Passionate, hands-on Prject Leader",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Working predominately remote on interdisciplinary large scale, international IT projects for 30+ years, I am a remote-first person and have not only found the routine and best working tools and processes to run and optimize virtual, interdisciplinary teams across cultures and time-zones but can still apply hands-on implementation skills from coding up to system processings with a focus on security and robust exibility.</p>"
+        },
+        {
+          "id": "019ff091-38ec-77ae-a27c-b7c1fce0da0e",
+          "hidden": false,
+          "title": "Innovation & Technology Coordination",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Advising board and C-level decision makers on tech trends, markets, risks, competitors and the right timing. I am strong in engagind and co-ordinating external consultants with in-house personel. I am a fast absorber of newes insights and I am great at spreading the news with the right granularity and context to stakeholders to make it sticky and relevant.</p>"
+        },
+        {
+          "id": "019ff093-7d29-77bf-b454-6a8941a06043",
+          "hidden": false,
+          "title": "Leading Programme Officer",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>I am great setting up and maintaining trusted, cross-organisational ideation and project management platforms for sharing synergies, as well as alignement and sponsoring new initiatives whenever required from strategic or operational needs.  </p>"
+        },
+        {
+          "id": "019ff097-9d6a-72b8-8126-84cf02eefb4a",
+          "hidden": false,
+          "title": "Driving Innovation Roadmaps",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Evaluating long-term and immediate innovation needs and making sure, that initiatives remain relevant and are driving the corporate agenda.</p>"
+        },
+        {
+          "id": "019ff098-a5ed-7450-ab0d-f3635a6de305",
+          "hidden": false,
+          "title": "Tech Ambassador",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Innovation-related exchange and first-hand contacts to leading experts in the fields of (conversational) AI with a focus on China, India, USA, the Nordics (Estonia) and Israel.  Expert knowledge on distributed ledger technologies (blockckains), Tokenization of assets, general process automatization and databsae technologies for structured and non-structured data. </p><p>Public speaker and enabling sponsor at meetups, hackathons and tech-events to keep such contacts alive and relevant.</p>"
+        },
+        {
+          "id": "019ff0ad-2ae7-7163-9d57-f3a12db82d93",
+          "hidden": false,
+          "title": "Open Source Contributor",
+          "publisher": "",
+          "date": "",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Contributing to various open source projects such as <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://gohugo.io\">gohugo.io</a> or <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://remark42.com\">remark42.com</a> to drive their intrapreneurial spirit, foster an inclusive culture, keeping folks in the loop and recruiting contributors for the creation of additional features and ensuring that real customer requirements are addressed rst.</p>"
+        }
+      ]
+    },
+    "volunteer": {
+      "title": "Volunteering",
+      "icon": "hand-heart",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": [
+        {
+          "id": "019feb7b-6468-722c-9df9-dbb8040e9b85",
+          "hidden": false,
+          "organization": "Open Source Projects",
+          "location": "GitHub",
+          "period": "ongoing",
+          "website": {
+            "url": "",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Contributing to various open source projects such as <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://gohugo.io\">gohugo.io</a> or <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://remark42.com\">remark42.com</a> to drive their intrapreneurial spirit, foster an inclusive culture, keeping folks in the loop and recruiting contributors for the creation of additional features and ensuring that real customer requirements are addressed first.</p>"
+        },
+        {
+          "id": "019feb7d-0512-75b9-80bf-b97b089ad78d",
+          "hidden": false,
+          "organization": "Elternrat Schule am Wasser",
+          "location": "Zürich",
+          "period": "2008-2017",
+          "website": {
+            "url": "https://www.stadt-zuerich.ch/schulen/de/amwasser.html",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>Memeber of the permanent board, creation and support of its Website </p>"
+        },
+        {
+          "id": "019feb80-ac73-752e-901c-e73e220a453d",
+          "hidden": false,
+          "organization": "Elternrat Sekundarschule Waidhalde",
+          "location": "Zürich",
+          "period": "2017-2019",
+          "website": {
+            "url": "https://www.stadt-zuerich.ch/content/schulen/de/waidhalde.html",
+            "label": "",
+            "inlineLink": false
+          },
+          "description": "<p>EventsOrganisation, Finances and WebSite</p>"
+        }
+      ]
+    },
+    "references": {
+      "title": "",
+      "icon": "phone",
+      "columns": 1,
+      "hidden": false,
+      "keepTogether": false,
+      "startOnNewPage": false,
+      "items": []
+    }
+  },
+  "customSections": [],
+  "metadata": {
+    "template": "pikachu",
+    "layout": {
+      "sidebarWidth": 28.67,
+      "pages": [
+        {
+          "fullWidth": true,
+          "main": [
+            "profiles",
+            "summary",
+            "education",
+            "experience",
+            "projects",
+            "volunteer",
+            "references",
+            "skills",
+            "certifications",
+            "awards",
+            "languages",
+            "interests",
+            "publications"
+          ],
+          "sidebar": []
+        }
+      ]
+    },
+    "page": {
+      "gapX": 4,
+      "gapY": 6,
+      "marginX": 14,
+      "marginY": 12,
+      "format": "a4",
+      "locale": "en-US",
+      "hideLinkUnderline": false,
+      "hideIcons": false,
+      "hideSectionIcons": true
+    },
+    "design": {
+      "level": {
+        "icon": "star",
+        "type": "circle"
+      },
+      "colors": {
+        "primary": "rgba(220, 38, 38, 1)",
+        "text": "rgba(0, 0, 0, 1)",
+        "background": "rgba(255, 255, 255, 1)"
+      }
+    },
+    "typography": {
+      "body": {
+        "fontFamily": "IBM Plex Serif",
+        "fontWeights": [
+          "400",
+          "500"
+        ],
+        "fontSize": 10,
+        "lineHeight": 1.5
+      },
+      "heading": {
+        "fontFamily": "IBM Plex Serif",
+        "fontWeights": [
+          "600"
+        ],
+        "fontSize": 14,
+        "lineHeight": 1.5
+      }
+    },
+    "notes": "",
+    "styleRules": [],
+    "stylesheet": {
+      "mode": "legacy",
+      "source": {
+        "languageVersion": 1,
+        "text": "@version 1;\n"
+      },
+      "applied": {
+        "languageVersion": 1,
+        "text": "@version 1;\n"
+      }
+    }
+  }
+}

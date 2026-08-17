@@ -3,32 +3,63 @@
 > **Purpose:** Architectural Decision Records (ADRs). Why we chose X over Y. Prevents re-litigating decisions.
 > **Update frequency:** Per significant architectural decision.
 > **Compliance pass (2026-08-17):** This revision reconciles DECISIONS.md with TECH.md v1.0.3 / SPEC.md v1.0.3. All "[FILL IN]" placeholders removed. ADR-007 ("No Custom Backend in MVP") contradicted TECH.md's ASP.NET Core 9 backend and has been marked **Superseded by ADR-011**. Nine ADRs (ADR-008 – ADR-016) were added to cover decisions that existed only in TECH.md §14's Decision Log and had no corresponding ADR. See BOUNDARIES.md §8 — this file may not be changed by AI without explicit approval going forward.
+>
+> **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. ADR-017 supersedes ADR-011 while preserving its historical record; see inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+
+---
+
+## ADR-017: Supabase BaaS Replaces Custom Backend for Auth + Storage
+
+**Status:** Accepted
+**Date:** 2026-08-17
+**Context:** The MVP needs email/password authentication plus authenticated read/write of MasterResume/SuperCV JSON files in fixed Supabase Storage path `Applai/SuperCV`. The former custom ASP.NET Core backend existed to keep a GitHub PAT out of the browser and to implement Argon2id hashing, JWT issuance, CAPTCHA, and rate limiting. Supabase Auth now manages passwords, access/refresh JWT issuance and rotation, and auth endpoint protections; Supabase Storage RLS authorizes the authenticated user's direct browser Storage calls. No GitHub PAT or similar secret is involved.
+
+**Decision:** Use `@supabase/supabase-js` directly from the React SPA for `supabase.auth.signInWithPassword`, `getSession`, `onAuthStateChange`, `getUser`, and fixed-folder Storage `list`, `download`, and `upload` calls. Configure Storage RLS policies around the authenticated user's JWT. For the current MVP, do not deploy a custom ASP.NET Core API or any backend merely to proxy Auth/Storage calls.
+
+**Consequences:**
+- ✅ Removes the GitHub PAT security boundary and the custom Argon2id/JWT/rate-limit implementation that justified ADR-011.
+- ✅ Lets the SPA list, download, and upload only authorized `Applai/SuperCV` objects through Storage RLS.
+- ✅ Reduces deployment and operational surface to the SPA plus Supabase project configuration.
+- ⚠️ Supabase's browser client defaults to localStorage; ADR-009 is amended to require a custom in-memory storage adapter (or an explicitly approved sessionStorage alternative).
+- ⚠️ ADR-014 remains: the LOGOUT button clears local application state and does **not** call `supabase.auth.signOut()` in the button flow. This preserves the existing immediate/no-round-trip behavior but leaves a Supabase refresh session valid until expiry; a future explicit revocation flow may make a different decision.
+- ❌ Requires careful Supabase project/RLS configuration and tests; the anon key is publishable but the service role key must never enter client code.
+
+**Alternatives considered:**
+- Retain ASP.NET Core 9 API as a GIST proxy: rejected — no GitHub PAT/GIST proxy exists after this migration, and Supabase RLS is the appropriate boundary for the current MVP.
+- Use a Supabase service role key in the SPA: rejected — it bypasses RLS and is a privileged secret.
+- Add a minimal serverless function now: deferred. A future serverless function is permitted **only** if a feature genuinely needs the Supabase service role key or another server-only secret; it must never expose that key to the browser.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — ADR-011 selected an ASP.NET Core backend for custom auth and GIST proxying. NEW — Supabase Auth plus Storage RLS lets the SPA call `supabase-js` directly for the current MVP.
 
 ---
 
 ## ADR-016: S002S1 Settings Panel for Persisted User Preferences
 
 **Status:** Accepted
-**Date:** 2026-08-15
-**Context:** Users repeatedly re-enter the same GIST URL, MasterResume filename, and preferred export name across sessions (S002D1, S002D2). Hardcoded env defaults (`VITE_DEFAULT_GIST_URL`) do not scale per-user.
+**Date:** 2026-08-15 (amended 2026-08-17)
+**Context:** Users repeatedly choose a MasterResume filename and preferred export name across sessions (S002D1, S002D2). The Supabase Storage location is fixed at `Applai/SuperCV`, so users must not configure a storage URL.
 
-**Decision:** Add S002S1 Settings Panel backed by `GET/PATCH /api/user/settings`, persisting `{ gistUrl?, masterResumeFile?, preferredCvName? }` server-side per user and caching in the Zustand `ui` slice.
+**Decision:** Keep S002S1 as a Settings Panel that persists `{ masterResumeFile?, preferredCvName? }` through an RLS-scoped Supabase user-settings mechanism and caches it in the Zustand `ui` slice. `masterResumeFile` can auto-select a matching file from the current `Applai/SuperCV` listing; `preferredCvName` pre-fills S002D1. Do not include a `gistUrl` or any other storage-URL field.
 
 **Consequences:**
-- ✅ S002D1 and S002D2 pre-fill from user settings, reducing repetitive data entry
-- ✅ Single source of truth for preferences (server-persisted, not just localStorage)
-- ❌ Adds one more CRUD surface (`UserSettings`) to the backend and API contract
-- ❌ Requires dirty-check confirmation UX on Cancel/Escape/Overlay-click to avoid silent data loss
+- ✅ S002D1 and S002D2 pre-fill meaningful filename preferences, reducing repetitive data entry.
+- ✅ Fixed Storage path prevents a preference from bypassing the intended Storage/RLS scope.
+- ✅ A Supabase table protected by RLS can keep settings synchronized across devices.
+- ❌ Settings persistence needs a small RLS-scoped table or an explicitly temporary local-preference fallback.
+- ❌ Requires dirty-check confirmation UX on Cancel/Escape/Overlay-click to avoid silent data loss.
 
 **Alternatives considered:**
-- Scattered env vars / hardcoded defaults only: rejected — error-prone, poor UX, not per-user
-- localStorage-only settings (no server persistence): rejected — settings would not follow the user across devices/browsers
+- Scattered defaults only: rejected — error-prone, poor UX, not per-user.
+- User-configurable storage URLs: rejected — conflicts with the fixed `Applai/SuperCV` MVP Storage boundary.
+- localStorage-only settings: rejected as the long-term solution — settings would not follow the user across devices/browsers.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — settings persisted a GIST URL alongside filenames through `/api/user/settings`. NEW — the fixed Storage location removes `gistUrl`; only preferred master/export filenames remain under RLS-scoped persistence.
 
 ---
 
 ## ADR-015: S002D2 Import Dialogue for Explicit GIST Selection
 
-**Status:** Accepted
+**Status:** Superseded by ADR-017
 **Date:** 2026-08-15
 **Context:** VISION.md requires the user to be asked for the GIST URL rather than have the app silently auto-load a resume from an implicit source.
 
@@ -41,6 +72,10 @@
 
 **Alternatives considered:**
 - Auto-load without user confirmation: rejected — error-prone, violates VISION.md's explicit-URL requirement (§3, Journey C)
+
+**Why it was superseded:** ADR-017 fixes the Storage location as `Applai/SuperCV`, eliminating the URL-entry requirement. S002D2 remains required, but now selects a listed SuperCV filename from the fixed folder.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — S002D2 explicitly collected a GIST URL. NEW — S002D2 remains the explicit user-confirmed import step but is a Supabase Storage file picker with no URL field.
 
 ---
 
@@ -60,6 +95,10 @@
 
 **Alternatives considered:**
 - Server-side logout (revoke refresh token server-side): rejected for MVP — adds latency and backend session-tracking complexity; JWT TTL is deemed sufficient for this scope
+
+**Amendment (2026-08-17):** Under ADR-017, the local-only LOGOUT rule means the button must not call `supabase.auth.signOut()` either. It clears the in-memory adapter/Zustand state and redirects; the Supabase refresh session remains valid until provider-managed expiry. An explicit future revocation flow requires a new decision.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — ADR-014 named a custom `/api/auth/logout` endpoint. NEW — the same no-round-trip button rule applies to `supabase.auth.signOut()`.
 
 ---
 
@@ -104,7 +143,7 @@
 
 ## ADR-011: ASP.NET Core 9 Minimal API as Custom Backend
 
-**Status:** Accepted — **Supersedes ADR-007**
+**Status:** Superseded by ADR-017 — **Supersedes ADR-007 (historical)**
 **Date:** 2026-08-15
 **Context:** The GitHub Personal Access Token (PAT) needed to read/write Gists must never be exposed to the client per BOUNDARIES.md §4 ("NO secrets in client code — API keys, tokens — everything server-side"). Authentication also requires server-side Argon2id password hashing, JWT issuance, rate limiting, and CAPTCHA verification — none of which can live in the SPA. This makes "no backend at all" (the original ADR-007 premise) untenable once BOUNDARIES.md's security rules and SPEC.md's auth requirements (§1, §7) are taken into account.
 
@@ -121,6 +160,10 @@
 - No backend at all (original ADR-007 premise): rejected — cannot hold the GitHub PAT securely, cannot hash passwords server-side, violates BOUNDARIES.md §4
 - Supabase/Firebase: rejected — GIST proxying and custom Argon2id/JWT flows don't map cleanly onto a BaaS; would still need a serverless function layer, at which point a Minimal API is simpler and keeps a single deployable
 - Serverless functions (e.g., Vercel Functions) fronting the same logic: viable alternative, not chosen because ASP.NET Core 9 was preferred for team familiarity and Gist-proxy logic complexity (per user technology background: strong C#/.NET expertise)
+
+**Why it was superseded:** Supabase Auth now provides the credential hashing, JWT issuance/rotation, auth rate limiting, and optional CAPTCHA controls that this ADR proposed to build. Supabase Storage RLS authorizes client-side access to the fixed `Applai/SuperCV` path, so the GitHub PAT secret-handling constraint no longer exists. ADR-017 is the accepted replacement; this historical ADR remains here because old ADRs are never deleted.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — ADR-011 required a backend to protect a GitHub PAT and implement custom Argon2id/JWT flows. NEW — it is superseded by ADR-017 because Supabase Auth and Storage RLS provide the required boundary without a current-MVP backend.
 
 ---
 
@@ -140,6 +183,8 @@
 **Alternatives considered:**
 - reCAPTCHA: rejected — heavier tracking footprint, less GDPR-friendly
 
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — hCaptcha was verified by the custom backend after its own attempt counter. NEW — CAPTCHA is optional Supabase Auth project configuration; when enabled, the client passes `captchaToken` to `signInWithPassword` and Supabase enforces it.
+
 ---
 
 ## ADR-009: Memory-Only JWT + httpOnly Refresh Cookie
@@ -158,6 +203,10 @@
 
 **Alternatives considered:**
 - `localStorage`/`sessionStorage` for JWT: rejected — vulnerable to XSS theft, violates SPEC.md §7 security checklist item "JWT stored in memory only"
+
+**Amendment (2026-08-17):** Supabase's browser client persists access and refresh tokens in `localStorage` by default, which conflicts with this ADR's intent. Create the client with a custom memory-only `Storage`-shaped adapter (or an explicitly approved sessionStorage adapter): `createClient(url, key, { auth: { persistSession: true, storage: <custom in-memory adapter> } })`. Keep the status Accepted; ADR-017 changes the provider, not the XSS-resistance goal.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — this ADR assumed an app-issued access JWT plus httpOnly refresh cookie. NEW — Supabase session tokens require an explicit custom browser storage adapter to preserve the memory-only intent.
 
 ---
 
@@ -240,9 +289,9 @@ features/
     types/
     utils/
   resume/
-    api/          # GIST API calls, User Settings API calls
+    api/          # Supabase Storage (Applai/SuperCV) API calls, User Settings API calls  <!-- UPDATED 2026-08-17 (Supabase migration): OLD "GIST API calls" -->
     components/   # S002, TVC01, S002D1, S002D2, S002S1
-    hooks/        # useGist, useTreeView, useSettings
+    hooks/        # useSuperCVFiles/useLoadSuperCV/useExportSuperCV, useTreeView, useSettings  <!-- UPDATED 2026-08-17 (Supabase migration): OLD "useGist" -->
     stores/       # Resume Zustand slice
     types/        # MasterCVNode, UserSettings
     utils/        # Tree helpers, export helpers
