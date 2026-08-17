@@ -79,7 +79,8 @@
 | 2026-08-17 | Reconciled DECISIONS.md/PATTERNS.md with SPEC.md/TECH.md | `046593f` | ADR-007/backend contradiction, PATTERNS.md LOGOUT server-call bug, missing EXIT/CANCEL/Import/Settings patterns |
 | 2026-08-17 | Vibecoded Phases 1–5 on the existing scaffold | `ff3ce1a` | src/SRC case-sensitivity bug, missing shadcn/ui primitives, missing AbortController wiring, non-global SMSG, missing gistUrl param, no ESLint config |
 | 2026-08-17 | Removed duplicate scaffold copies | `a25ffe1` | Repo cleanliness — `VSC/client/` now matches TECH.md §2 exactly |
-| 2026-08-17 | Renamed `SRC/` → `src/` repo-wide | *(pending)* | Aligned with standard Vite/JS lowercase convention; permanently removes the src/SRC case-sensitivity risk |
+| 2026-08-17 | Renamed `SRC/` → `src/` repo-wide | `cedecd9` | Aligned with standard Vite/JS lowercase convention; permanently removes the src/SRC case-sensitivity risk |
+| 2026-08-17 | Restored `VSC/client/.vscode/{launch,settings,extensions}.json` | *(pending)* | Fixed a regression: the earlier scaffold-cleanup pass deleted the only two copies of `.vscode/launch.json` (root loose copy + `scaffold/` copy) without noticing neither had ever been duplicated into `src/`, leaving VS Code's Run and Debug panel with "No Configurations". Recreated at `VSC/client/.vscode/` (where the user actually opens the workspace) with `cwd`/`webRoot` pointed at `${workspaceFolder}/src` to match the current structure. |
 
 ---
 
