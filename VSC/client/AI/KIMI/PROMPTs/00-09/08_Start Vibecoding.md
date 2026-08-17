@@ -8,8 +8,13 @@ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv PROMPT vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ## Context
 You are building the **ApplAi Resume Generator** — a single-page React application that helps users generate tailored CVs from a master CV stored as a GitHub Gist.
 
+## Repository to be used
+My Project Repository is on a public Github with URL = https://github.com/realB12/ApplAi_Generator/tree/main
+
 ## Mandatory Context Files
-Before writing ANY code, read these files in this order:
+The AI Context/Configuration Files for VibeCoding are found in https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/AI/KIMI/CONFIG: 
+
+Before writing ANY code, read these files in this order
 1. VISION.md — Product vision and acceptance criteria
 2. SPEC.md — Functional specification (screens, components, state, API)
 3. TECH.md — Technical stack and architecture
