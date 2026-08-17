@@ -1,4 +1,4 @@
-# Start VibeCoding
+# VibeCoding the Generator Client
 Once all the Context-Files are without errors (-> [06_Making sure the generated code compiles, debugs and can be tested with VS Code](06_Making%20sure%20the%20generated%20code%20compiles,%20debugs%20and%20can%20be%20tested%20with%20VS%20Code.md) and [07_CHECK for VibeCoding readyness](07_CHECK%20for%20VibeCoding%20readyness.md)) you can start Vibecoding with the following prompt: 
 
 vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv PROMPT vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
