@@ -9,13 +9,13 @@
 
 **Date:** 2026-08-17
 **Branch:** `feature/F-01-client-scaffold`
-**Focus:** Vibecoding Phases 1–5 on top of the existing scaffold (`VSC/client/SRC`) — App shell, Auth feature, Resume feature, dialogs, and error handling.
+**Focus:** Vibecoding Phases 1–5 on top of the existing scaffold (`VSC/client/src`) — App shell, Auth feature, Resume feature, dialogs, and error handling. Later in the same day: renamed the source folder from `SRC/` to `src/` repo-wide (code + all context/prompt docs).
 
 ---
 
 ## What Was Done Last Session
 
-- [x] Fixed a real cross-platform bug: the scaffold's `vite.config.ts`/`tsconfig.json`/`tailwind.config.js`/`components.json`/`index.html` referenced a lowercase `./src` path that only resolved on case-insensitive filesystems (Windows). Since `package.json` lives directly inside `SRC/` (SRC is the project root, not a `src/` subfolder within one), all path references were corrected to be root-relative (no `src`/`SRC` segment at all).
+- [x] Fixed a real cross-platform bug: the scaffold's `vite.config.ts`/`tsconfig.json`/`tailwind.config.js`/`components.json`/`index.html` referenced a lowercase `./src` path that only resolved on case-insensitive filesystems (Windows), while the actual folder on disk was `SRC/` (uppercase, and the project root itself — not a subfolder within one). All path references were corrected to be root-relative (no `src`/`SRC` segment at all). **Later resolved permanently** (see below): the folder itself was renamed to lowercase `src/`, so this class of bug can no longer recur.
 - [x] Added the missing shadcn/ui primitives (`button`, `input`, `label`, `checkbox`, `dialog`) — `npx shadcn add` had never actually been run.
 - [x] Added missing semantic Tailwind color tokens (`border`, `background`, `ring`, etc.) mapped to the CSS variables already defined in `styles/index.css`.
 - [x] Implemented `lib/api.ts` (P02) with the AbortController wiring (`createRequestSignal`/`abortAllRequests`) required by TECH.md §8.
@@ -52,6 +52,8 @@
 
 **Resolved this session:** Repo cleanliness — `VSC/client/` had three parallel copies of the scaffold (loose files directly under `VSC/client/`, `VSC/client/scaffold/`, and the canonical `VSC/client/SRC/`). Confirmed via diff that the two duplicates were strictly older/superseded with nothing unique, then removed both. `VSC/client/` now matches TECH.md §2's structure exactly.
 
+**Also resolved this session:** Renamed `VSC/client/SRC/` → `VSC/client/src/` (lowercase) at the user's request, and updated every text reference to the path across TECH.md, this file, and the AI/KIMI prompt/scaffold docs. Since `vite.config.ts`/`tsconfig.json`/etc. already used root-relative paths (no hardcoded folder name, per the earlier fix above), the rename required no config changes — `npm run typecheck` and `npm run build` were re-verified to still pass afterward.
+
 ---
 
 ## Next Steps (Priority Order)
@@ -77,6 +79,7 @@
 | 2026-08-17 | Reconciled DECISIONS.md/PATTERNS.md with SPEC.md/TECH.md | `046593f` | ADR-007/backend contradiction, PATTERNS.md LOGOUT server-call bug, missing EXIT/CANCEL/Import/Settings patterns |
 | 2026-08-17 | Vibecoded Phases 1–5 on the existing scaffold | `ff3ce1a` | src/SRC case-sensitivity bug, missing shadcn/ui primitives, missing AbortController wiring, non-global SMSG, missing gistUrl param, no ESLint config |
 | 2026-08-17 | Removed duplicate scaffold copies | `a25ffe1` | Repo cleanliness — `VSC/client/` now matches TECH.md §2 exactly |
+| 2026-08-17 | Renamed `SRC/` → `src/` repo-wide | *(pending)* | Aligned with standard Vite/JS lowercase convention; permanently removes the src/SRC case-sensitivity risk |
 
 ---
 

@@ -16,7 +16,7 @@ That's why just downloading your vibecode into your IDE will (normally) not work
 
 The good news is, **that the set of these files can be packed by the AI in a ZIP-file (scaffold.zip) that then will be extracted into the Component's root folder** such as ..\S02_GENERATOR\VSC\client. 
 
-Then you have to add the following Stub Components (that will then be overwritten by the AI generated code) into the  *VSC/client/SRC/features/auth/components* folder
+Then you have to add the following Stub Components (that will then be overwritten by the AI generated code) into the  *VSC/client/src/features/auth/components* folder
 
 1. **WelcomeScreen.tsx**
 ```typescript

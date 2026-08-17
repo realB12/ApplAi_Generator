@@ -4,7 +4,7 @@ I am an advanced Software developer
 
 I have setup a minimal project strcuture for the development of a simple single page webapplication (SPA) on my Github account. 
 
-Alle the vibecoded SourceCode must go to into https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/SRC
+Alle the vibecoded SourceCode must go to into https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/src
 
 All Context files such as VISION.md, SPEC.md, TECH.md etc. are found at https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/AI/KIMI/CONFIG
 
