@@ -15,7 +15,7 @@ The AI generates components, hooks, and logic, but **it does not generate the pr
 
 **Without these, cloning the repo and running npm install && npm run dev will fail immediately.**
 
-Here is the complete scaffolding you need to add to your repo before vibecoding starts. These files live at VSC/client/ level (the frontend root), while the AI-generated code goes into VSC/client/SRC/.
+Here is the complete scaffolding you need to add to your repo before vibecoding starts. These files live at VSC/client/ level (the frontend root), while the AI-generated code goes into VSC/client/src/.
 
 The good news: **Your AI can generate most probably whatever you need to do so!**
 

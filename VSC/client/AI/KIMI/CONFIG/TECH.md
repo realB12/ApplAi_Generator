@@ -56,7 +56,7 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   ├─ DOCS/                       # Developer Manuals, Dev-Specs, Configuration hints
 |   |   ├─ PRODUCT/                    # contains the compiled binaries for deployment
 |   |   ├─ SCRIPTs/                    # all Scripts for build, debug and deploy
-|   |   ├─ SRC/                        # The sourcecode that finally makes the product
+|   |   ├─ src/                        # The sourcecode that finally makes the product
 |   |   |   ├─ app/                    # App-level setup
 |   |   |   |   ├── providers.tsx      # Context providers composition
 |   |   |   |   ├── router.tsx         # Route definitions
@@ -97,7 +97,7 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 
 The only folders AI is allowed to touch are the following:
 
-1. **/SRC**: All vibecoded **SourceCode** goes into `https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/SRC`
+1. **/src**: All vibecoded **SourceCode** goes into `https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/src`
 
 2. **/AI/KIMI/CONFIG**: **All AI Context** is found and must be loaded from `https://github.com/realB12/ApplAi_Generator/tree/main/VSC/client/AI/KIMI/CONFIG`
 
