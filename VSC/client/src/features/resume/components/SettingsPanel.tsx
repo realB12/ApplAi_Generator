@@ -1,4 +1,8 @@
-// S002S1 — Settings Panel PopUp (PATTERNS.md P16, SPEC.md §3.8)
+// S002S1 — Settings Panel PopUp (PATTERNS.md P16, SPEC.md §3.8).
+// UPDATED 2026-08-17 (Supabase migration): OLD — persisted a configurable
+// `gistUrl` with URL validation. NEW — the Storage path is fixed to
+// `Applai/SuperCV` (shown as a read-only note); settings retain only
+// `masterResumeFile`/`preferredCvName`.
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,22 +23,22 @@ import { useUserSettings, useSaveSettings } from '../hooks/useSettings';
 import { useMessage } from '@/hooks/useMessage';
 
 const settingsSchema = z.object({
-  gistUrl: z
-    .string()
-    .max(500)
-    .regex(/^(https:\/\/[a-zA-Z0-9._~:/?#[\]@!$&'()*+,;=-]+)?$/, 'Please enter a valid HTTPS URL.')
-    .optional()
-    .or(z.literal('')),
   masterResumeFile: z
     .string()
-    .max(60, 'Filename must be at most 60 characters.')
-    .regex(/^[a-zA-Z0-9_.-]*$/, 'Only letters, numbers, dots, hyphens, and underscores allowed.')
+    .max(60, 'Filename must be at most 60 characters. Only letters, numbers, dots, hyphens, and underscores allowed.')
+    .regex(
+      /^[a-zA-Z0-9_.-]*$/,
+      'Filename must be at most 60 characters. Only letters, numbers, dots, hyphens, and underscores allowed.'
+    )
     .optional()
     .or(z.literal('')),
   preferredCvName: z
     .string()
-    .max(23, 'Name must be 3\u201323 characters.')
-    .regex(/^([a-zA-Z0-9_-]{3,23})?$/, 'Only letters, numbers, hyphens, and underscores allowed.')
+    .max(23, 'Name must be 3\u201323 characters. Only letters, numbers, hyphens, and underscores allowed.')
+    .regex(
+      /^([a-zA-Z0-9_-]{3,23})?$/,
+      'Name must be 3\u201323 characters. Only letters, numbers, hyphens, and underscores allowed.'
+    )
     .optional()
     .or(z.literal('')),
 });
@@ -59,13 +63,12 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     formState: { errors, isDirty },
   } = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: { gistUrl: '', masterResumeFile: '', preferredCvName: '' },
+    defaultValues: { masterResumeFile: '', preferredCvName: '' },
   });
 
   useEffect(() => {
     if (open && settings) {
       reset({
-        gistUrl: settings.gistUrl ?? '',
         masterResumeFile: settings.masterResumeFile ?? '',
         preferredCvName: settings.preferredCvName ?? '',
       });
@@ -98,28 +101,16 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
           <DialogHeader>
             <DialogTitle id="s002s1-title">User Settings</DialogTitle>
           </DialogHeader>
+          <p id="s002s1-storage-path" className="text-xs text-text-secondary">
+            Supabase Storage: Applai/SuperCV
+          </p>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="space-y-4 py-4">
               <div>
-                <Label htmlFor="s002s1-gist-url">Default GIST URL</Label>
-                <Input
-                  id="s002s1-gist-url"
-                  placeholder="https://gist.github.com/..."
-                  aria-invalid={errors.gistUrl ? 'true' : 'false'}
-                  aria-describedby={errors.gistUrl ? 's002s1-gist-url-error' : undefined}
-                  {...register('gistUrl')}
-                />
-                {errors.gistUrl && (
-                  <span id="s002s1-gist-url-error" className="text-sm text-error">
-                    {errors.gistUrl.message}
-                  </span>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="s002s1-masterresume">Preferred MasterResume File</Label>
+                <Label htmlFor="s002s1-masterresume">Preferred SuperCV File</Label>
                 <Input
                   id="s002s1-masterresume"
-                  placeholder="MasterResume.json"
+                  placeholder="SuperCV.json"
                   aria-invalid={errors.masterResumeFile ? 'true' : 'false'}
                   aria-describedby={errors.masterResumeFile ? 's002s1-masterresume-error' : undefined}
                   {...register('masterResumeFile')}

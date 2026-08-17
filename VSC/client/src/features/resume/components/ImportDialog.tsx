@@ -1,4 +1,8 @@
-// S002D2 — GIST MasterResume IMPORT Dialogue PopUp (PATTERNS.md P15, SPEC.md §3.5)
+// S002D2 — SuperCV Master File IMPORT Dialogue PopUp (PATTERNS.md P15, SPEC.md §3.5).
+// UPDATED 2026-08-17 (Supabase migration): OLD — the dialog had a `gistUrl`
+// schema field and URL prefill cascade. NEW — it is a fixed `Applai/SuperCV`
+// file picker populated from P06; there is no URL input, URL validation, or
+// `gistUrl` state.
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,25 +15,21 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ScreenBadge } from '@/components/common/ScreenBadge';
-import { useGistFiles, useLoadGist } from '../hooks/useGist';
-import { useResumeStore, useUIStore } from '@/app/store';
+import { useSuperCVFiles } from '../hooks/useSuperCVStorage';
+import { loadSuperCVFile } from '../api/supercvStorageApi';
+import { useResumeStore } from '../stores/resumeStore';
+import { useUIStore } from '@/app/store';
 import { useMessage } from '@/hooks/useMessage';
 
 const importSchema = z.object({
-  gistUrl: z
-    .string()
-    .min(1, 'Please enter a valid HTTPS URL.')
-    .max(500)
-    .regex(/^https:\/\/[a-zA-Z0-9._~:/?#[\]@!$&'()*+,;=-]+$/, 'Please enter a valid HTTPS URL.'),
   filename: z
     .string()
-    .min(3, 'Filename must be 3\u201360 characters.')
-    .max(60, 'Filename must be 3\u201360 characters.')
-    .regex(/^[a-zA-Z0-9_.-]+$/, 'Only letters, numbers, dots, hyphens, and underscores allowed.'),
+    .min(3, 'Select a valid file from the SuperCV folder.')
+    .max(60, 'Select a valid file from the SuperCV folder.')
+    .regex(/^[a-zA-Z0-9_.-]+$/, 'Select a valid file from the SuperCV folder.'),
 });
 
 type ImportFormData = z.infer<typeof importSchema>;
@@ -40,71 +40,51 @@ interface ImportDialogProps {
 }
 
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
-  const cachedGistUrl = useResumeStore((s) => s.gistUrl);
   const settings = useUIStore((s) => s.settings);
-  // Pre-fill cascade (SPEC §3.5.3): session cache -> user settings -> env var
-  const defaultGistUrl =
-    cachedGistUrl || settings?.gistUrl || (import.meta.env.VITE_DEFAULT_GIST_URL as string) || '';
   const defaultFilename = settings?.masterResumeFile || '';
 
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     reset,
-    formState: { errors, isValid },
+    formState: { errors, isValid, isSubmitting },
   } = useForm<ImportFormData>({
     resolver: zodResolver(importSchema),
-    defaultValues: { gistUrl: defaultGistUrl, filename: defaultFilename },
+    defaultValues: { filename: defaultFilename },
     mode: 'onBlur',
   });
 
+  const filesQuery = useSuperCVFiles();
+  const jsonFiles = (filesQuery.data ?? []).filter((f) => f.name.toLowerCase().endsWith('.json'));
+
+  // SPEC.md §3.5.3: preselect the user's masterResumeFile setting when it
+  // exists in the listing; otherwise preselect the first JSON file.
   useEffect(() => {
-    if (open) {
-      reset({ gistUrl: defaultGistUrl, filename: defaultFilename });
-      setTimeout(() => {
-        const input = document.getElementById('s002d2-url') as HTMLInputElement | null;
-        input?.focus();
-        input?.select();
-      }, 50);
-    }
+    if (!open || filesQuery.isLoading) return;
+    const names = jsonFiles.map((f) => f.name);
+    reset({ filename: names.includes(defaultFilename) ? defaultFilename : names[0] ?? '' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, filesQuery.isLoading]);
 
-  const gistUrl = watch('gistUrl');
-  const filesQuery = useGistFiles(importSchema.shape.gistUrl.safeParse(gistUrl).success ? gistUrl : '');
-
-  useEffect(() => {
-    if (filesQuery.data?.length && !defaultFilename) {
-      const firstJson = filesQuery.data.find((f) => f.filename.toLowerCase().endsWith('.json'));
-      if (firstJson) setValue('filename', firstJson.filename);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filesQuery.data]);
-
-  const setMasterCV = useResumeStore((s) => s.setMasterCV);
-  const setGistSource = useResumeStore((s) => s.setGistSource);
+  const setSuperCV = useResumeStore((s) => s.setSuperCV);
+  const setStorageFilename = useResumeStore((s) => s.setStorageFilename);
   const { showSuccess, showError } = useMessage();
-  const loadQuery = useLoadGist(gistUrl, watch('filename'));
   const setTransactionRunning = useUIStore((s) => s.setTransactionRunning);
-
-  useEffect(() => {
-    setTransactionRunning(loadQuery.isFetching);
-  }, [loadQuery.isFetching, setTransactionRunning]);
 
   const handleCancel = () => onOpenChange(false); // no side effects (SPEC §3.5.3)
 
-  const onSubmit = async (data: ImportFormData) => {
+  const onSubmit = async ({ filename }: ImportFormData) => {
+    setTransactionRunning(true);
     try {
-      const result = await loadQuery.refetch({ throwOnError: true });
-      if (!result.data) throw new Error('EMPTY');
-      setMasterCV(result.data);
-      setGistSource(data.gistUrl, data.filename);
+      const doc = await loadSuperCVFile(filename);
+      setSuperCV(doc);
+      setStorageFilename(filename);
       onOpenChange(false);
-      showSuccess(`MasterResume loaded: ${data.filename}`);
+      showSuccess(`SuperCV file loaded: ${filename}`);
     } catch {
-      showError('GIST not found or not accessible. Please check the URL and try again.');
+      showError('SuperCV folder or selected file is not accessible. Please try another file.');
+    } finally {
+      setTransactionRunning(false);
     }
   };
 
@@ -115,38 +95,40 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         <DialogHeader>
           <DialogTitle id="s002d2-title">Import Master CV</DialogTitle>
           <DialogDescription id="s002d2-prompt">
-            Please enter the GIST URL and then choose a file for import.
+            Choose a file from Applai/SuperCV for import.
           </DialogDescription>
         </DialogHeader>
+        <p id="s002d2-storage-path" className="text-xs text-text-secondary">
+          Supabase Storage: Applai/SuperCV
+        </p>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="s002d2-url">GIST URL</Label>
-              <Input
-                id="s002d2-url"
-                placeholder="https://gist.github.com/..."
-                aria-invalid={errors.gistUrl ? 'true' : 'false'}
-                aria-describedby={errors.gistUrl ? 's002d2-url-error' : undefined}
-                {...register('gistUrl')}
-              />
-              {errors.gistUrl && (
-                <span id="s002d2-url-error" className="text-sm text-error">
-                  {errors.gistUrl.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="s002d2-filename">MasterResume File Name</Label>
-              <Input
+              <Label htmlFor="s002d2-filename">SuperCV File Name</Label>
+              <select
                 id="s002d2-filename"
-                placeholder="MasterResume.json"
                 aria-invalid={errors.filename ? 'true' : 'false'}
                 aria-describedby={errors.filename ? 's002d2-filename-error' : undefined}
+                disabled={filesQuery.isLoading}
+                className="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:ring-1 focus:ring-accent"
                 {...register('filename')}
-              />
+              >
+                <option value="">Select a JSON file</option>
+                {jsonFiles.map((f) => (
+                  <option key={f.path} value={f.name}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
               {errors.filename && (
                 <span id="s002d2-filename-error" className="text-sm text-error">
                   {errors.filename.message}
+                </span>
+              )}
+              {!filesQuery.isLoading && jsonFiles.length === 0 && (
+                <span className="mt-1 block text-sm text-info">
+                  No SuperCV JSON files are available. Upload a master file to Applai/SuperCV outside the app, then
+                  try again.
                 </span>
               )}
             </div>
@@ -155,7 +137,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
             <Button id="s002d2-cancel" type="button" variant="secondary" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button id="s002d2-import" type="submit" disabled={!isValid || loadQuery.isFetching}>
+            <Button id="s002d2-import" type="submit" disabled={!isValid || isSubmitting || filesQuery.isLoading}>
               Import
             </Button>
           </DialogFooter>

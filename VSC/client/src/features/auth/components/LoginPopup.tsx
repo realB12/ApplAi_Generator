@@ -1,6 +1,10 @@
 // S001 — Login Screen (Popup). PATTERNS.md P03, extended per SPEC.md §3.2
 // with the EXIT button, failed-attempt counter, hCaptcha (after 3 fails),
 // and 15-min lockout (after 5 fails / HTTP 429).
+// UPDATED 2026-08-17 (Supabase migration): OLD — `login()` posted to a custom
+// `/auth/login` endpoint and returned a custom `{ status, error }` shape on
+// failure. NEW — `login()` calls `supabase.auth.signInWithPassword()`;
+// failures surface as a Supabase `AuthApiError` (`.status`/`.message`).
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,9 +28,9 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-interface ApiErrorLike {
+interface AuthApiErrorLike {
   status?: number;
-  error?: { message?: string };
+  message?: string;
 }
 
 export function LoginPopup() {
@@ -61,14 +65,14 @@ export function LoginPopup() {
       { ...data, captchaToken },
       {
         onError: (err: unknown) => {
-          const apiErr = err as ApiErrorLike;
-          if (apiErr?.status === 429) {
+          const authErr = err as AuthApiErrorLike;
+          if (authErr?.status === 429) {
             setLockedUntil(Date.now() + 15 * 60 * 1000);
             setServerError('Too many attempts. Please try again in 15 minutes.');
             return;
           }
           setFailedAttempts((n) => n + 1);
-          setServerError(apiErr?.error?.message ?? 'Invalid email or password.');
+          setServerError(authErr?.message ?? 'Invalid email or password.');
           resetField('password');
           setFocus('password');
         },

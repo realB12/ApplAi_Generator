@@ -1,7 +1,7 @@
 // TECH.md §7 Route Guards: redirect to '/' (S000) if unauthenticated.
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '@/app/store';
+import { useAuthStore } from '../stores/authStore';
 import { Spinner } from '@/components/common/Spinner';
 
 interface ProtectedRouteProps {

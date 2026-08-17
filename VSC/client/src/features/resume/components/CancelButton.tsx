@@ -1,9 +1,15 @@
-// P14 — CANCEL Button Pattern (PATTERNS.md, SPEC.md §3.6.5)
+// P14 — CANCEL Button Pattern (PATTERNS.md, SPEC.md §3.6.5).
+// UPDATED 2026-08-17 (Reactive Resume schema mapping): OLD — `isDirty`/
+// `resetAllToSelected` were separate flags on the generic tree store, backed
+// by a recursive `setAllSelected()` helper. NEW — `useResumeStore` already
+// provides `isDirty()` (compares `superCV` against `pristineSuperCV`) and
+// `resetToPristine()` (re-applies `forceAllHiddenFalse` to the pristine
+// copy) — no separate helper is needed here.
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessagePopup } from '@/components/common/MessagePopup';
 import { abortAllRequests } from '@/lib/api';
-import { useResumeStore } from '@/app/store';
+import { useResumeStore } from '../stores/resumeStore';
 import { useMessage } from '@/hooks/useMessage';
 
 interface CancelButtonProps {
@@ -13,12 +19,12 @@ interface CancelButtonProps {
 export function CancelButton({ isTransactionRunning }: CancelButtonProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const isDirty = useResumeStore((s) => s.isDirty);
-  const resetAllToSelected = useResumeStore((s) => s.resetAllToSelected);
+  const resetToPristine = useResumeStore((s) => s.resetToPristine);
   const { showInfo } = useMessage();
 
   const handleClick = () => {
     // Case C — nothing to cancel
-    if (!isTransactionRunning && !isDirty) {
+    if (!isTransactionRunning && !isDirty()) {
       showInfo('Nothing to cancel.');
       return;
     }
@@ -32,8 +38,9 @@ export function CancelButton({ isTransactionRunning }: CancelButtonProps) {
       abortAllRequests();
       return;
     }
-    // Case B — discard modifications: reset every node to selected
-    resetAllToSelected();
+    // Case B — discard modifications: reset every section/item hidden flag to
+    // false and revert field edits to the last-loaded document.
+    resetToPristine();
   };
 
   const message = isTransactionRunning

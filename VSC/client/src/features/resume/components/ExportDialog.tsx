@@ -1,4 +1,9 @@
-// S002D1 — Export Dialogue PopUp (PATTERNS.md P04, SPEC.md §3.4)
+// S002D1 — Export Dialogue PopUp (PATTERNS.md P04/P07, SPEC.md §3.3.5, §3.4).
+// UPDATED 2026-08-17 (Reactive Resume schema mapping + Supabase migration):
+// OLD — read `getSelectedSubset()` from a generic tree and exported through
+// GIST mutations with a separate collision-check call. NEW — prunes the live
+// SuperCVDocument via `buildExportDocument()` and resolves a collision-free
+// filename directly from the `Applai/SuperCV` Storage listing.
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,8 +20,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ScreenBadge } from '@/components/common/ScreenBadge';
-import { useResumeStore, useUIStore } from '@/app/store';
-import { useExportGist, useCheckFilename } from '../hooks/useGist';
+import { useResumeStore } from '../stores/resumeStore';
+import { useUIStore } from '@/app/store';
+import { useExportSuperCV, useAvailableExportFilename } from '../hooks/useSuperCVStorage';
+import { buildExportDocument, hasAnySelectedContent } from '../utils/buildExportDocument';
 import { useMessage } from '@/hooks/useMessage';
 
 const exportSchema = z.object({
@@ -24,7 +31,10 @@ const exportSchema = z.object({
     .string()
     .min(3, 'Name must be 3\u201323 characters. Only letters, numbers, hyphens, and underscores allowed.')
     .max(23, 'Name must be 3\u201323 characters. Only letters, numbers, hyphens, and underscores allowed.')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Name must be 3\u201323 characters. Only letters, numbers, hyphens, and underscores allowed.'),
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      'Name must be 3\u201323 characters. Only letters, numbers, hyphens, and underscores allowed.'
+    ),
 });
 
 type ExportFormData = z.infer<typeof exportSchema>;
@@ -60,40 +70,29 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     }
   }, [open, defaultName, reset]);
 
-  const getSelectedSubset = useResumeStore((s) => s.getSelectedSubset);
-  const exportMutation = useExportGist();
-  const checkMutation = useCheckFilename();
+  const superCV = useResumeStore((s) => s.superCV);
+  const exportMutation = useExportSuperCV();
+  const filenameMutation = useAvailableExportFilename();
   const { showSuccess, showError } = useMessage();
   const setTransactionRunning = useUIStore((s) => s.setTransactionRunning);
 
   useEffect(() => {
-    setTransactionRunning(exportMutation.isPending || checkMutation.isPending);
-  }, [exportMutation.isPending, checkMutation.isPending, setTransactionRunning]);
+    setTransactionRunning(exportMutation.isPending || filenameMutation.isPending);
+  }, [exportMutation.isPending, filenameMutation.isPending, setTransactionRunning]);
 
   const handleCancel = () => onOpenChange(false);
 
   const onSubmit = async (data: ExportFormData) => {
-    const selectedNodes = getSelectedSubset();
-    if (selectedNodes.length === 0) {
+    if (!superCV || !hasAnySelectedContent(superCV)) {
       showError('No nodes selected. Please select at least one node to export.');
       return;
     }
 
     try {
-      const checkResult = await checkMutation.mutateAsync(data.filename);
-      let finalName = data.filename;
-
-      if (checkResult.exists) {
-        if (checkResult.nextSuffix === undefined || checkResult.nextSuffix > 99) {
-          showError('Export failed: too many files with this name. Please choose a different name.');
-          return;
-        }
-        finalName = `${data.filename}${checkResult.nextSuffix.toString().padStart(2, '0')}`;
-      }
-
-      await exportMutation.mutateAsync({ filename: `${finalName}.JSON`, content: selectedNodes });
+      const filename = await filenameMutation.mutateAsync(data.filename);
+      await exportMutation.mutateAsync({ filename, content: buildExportDocument(superCV) });
       onOpenChange(false);
-      showSuccess(`CV exported successfully as ${finalName}.JSON`);
+      showSuccess(`CV exported successfully as ${filename}`);
     } catch {
       showError('Export failed. Please try again.');
     }
@@ -131,7 +130,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             <Button id="s002d1-cancel" type="button" variant="secondary" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button id="s002d1-export" type="submit" disabled={!isValid || exportMutation.isPending}>
+            <Button id="s002d1-export" type="submit" disabled={!isValid || exportMutation.isPending || filenameMutation.isPending}>
               Export
             </Button>
           </DialogFooter>

@@ -1,12 +1,16 @@
 // S000 — Welcome Screen / Landing Page (SPEC.md §3.1)
+// UPDATED 2026-08-17 (Supabase migration): OLD — `useHealthCheck()` polled a
+// custom `/health` endpoint. NEW — `useValidateSession()` both checks
+// Supabase reachability (5s guard, SPEC.md §3.1.3 point 1) and the returning-
+// user session (point 2) in a single Supabase call.
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScreenBadge } from '@/components/common/ScreenBadge';
 import { Spinner } from '@/components/common/Spinner';
 import { Button } from '@/components/ui/button';
 import { useMessage } from '@/hooks/useMessage';
-import { useAuthStore } from '@/app/store';
-import { useHealthCheck } from '../hooks/useAuth';
+import { useAuthStore } from '../stores/authStore';
+import { useValidateSession } from '../hooks/useAuth';
 import { LoginPopup } from './LoginPopup';
 
 // NOTE: session validation itself is triggered once, app-wide, in
@@ -17,22 +21,23 @@ export function WelcomeScreen() {
   const { showError } = useMessage();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const health = useHealthCheck();
+  const session = useValidateSession();
 
-  // SPEC.md §3.1.3: 200 on session validation -> skip S001 entirely and go
+  // SPEC.md §3.1.3: a valid restored session -> skip S001 entirely and go
   // straight to S002.
   useEffect(() => {
     if (isAuthenticated) navigate('/app', { replace: true });
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    if (health.isError) {
+    if (session.isError) {
       showError('Authentication service is unavailable. Please try again later.', {
         actionLabel: 'Retry',
-        onAction: () => health.refetch(),
+        onAction: () => session.refetch(),
       });
     }
-  }, [health.isError, health.refetch, showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.isError, session.refetch, showError]);
 
   return (
     <div
@@ -68,14 +73,14 @@ export function WelcomeScreen() {
         </p>
 
         <div id="s000-login-container" className="mt-8 w-full">
-          {health.isPending ? (
+          {session.isPending ? (
             <div id="s000-spinner" role="status" aria-live="polite" className="flex justify-center py-8">
               <Spinner />
             </div>
-          ) : health.isSuccess ? (
+          ) : session.isSuccess ? (
             <LoginPopup />
-          ) : health.isError ? (
-            <Button id="s000-retry" onClick={() => health.refetch()}>
+          ) : session.isError ? (
+            <Button id="s000-retry" onClick={() => session.refetch()}>
               Retry
             </Button>
           ) : null}

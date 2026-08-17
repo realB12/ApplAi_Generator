@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { MessagePopup } from '@/components/common/MessagePopup';
 import { useMessageStore } from '@/hooks/useMessage';
-import { useAuthStore } from '@/app/store';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useValidateSession } from '@/features/auth/hooks/useAuth';
 
 export function RootLayout() {

@@ -4,7 +4,9 @@
 > **Update frequency:** After every session — this is your continuity lifeline.
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
 >
-> **Reactive Resume schema-mapping pass (2026-08-17):** TECH.md, SPEC.md, and PATTERNS.md were updated to replace the generic `MasterCVNode` tree with the real Reactive Resume `SuperCVDocument` schema (DECISIONS.md ADR-018) confirmed against `VSC/data/SuperCV/supercv.json`. `src/` still needs to be migrated to match (see Next Steps).
+> **Reactive Resume schema-mapping pass (2026-08-17):** TECH.md, SPEC.md, and PATTERNS.md were updated to replace the generic `MasterCVNode` tree with the real Reactive Resume `SuperCVDocument` schema (DECISIONS.md ADR-018) confirmed against `VSC/data/SuperCV/supercv.json`.
+>
+> **Source migration pass (2026-08-17, later same day):** `src/` has now been updated to match both passes above — Supabase Auth/Storage AND `SuperCVDocument`. See "What Was Done Last Session" below for the file-by-file change list.
 
 ---
 
@@ -12,9 +14,9 @@
 
 **Date:** 2026-08-17
 **Branch:** `feature/F-01-client-scaffold`
-**Focus:** Migrated context docs (VISION/SPEC/TECH/BOUNDARIES/DECISIONS/PATTERNS) from GIST-backed storage + custom Argon2id/JWT auth to Supabase Auth + Supabase Storage (bucket `Applai`, folder `SuperCV`) per ADR-017. This documentation pass does not modify `src/` implementation.
+**Focus:** Migrated the actual `src/` implementation (not just the CONFIG docs) to Supabase Auth + Supabase Storage (bucket `Applai`, folder `SuperCV`) per ADR-017, and to the real `SuperCVDocument` schema per ADR-018. `npm run typecheck` and `npm run lint` both pass against the new code.
 
-> **UPDATED 2026-08-17 (Supabase migration):** OLD — the context docs directed the client to a custom ASP.NET Core API and GIST proxy. NEW — they direct the SPA to Supabase Auth and direct `supabase-js` Storage calls under RLS.
+> **UPDATED 2026-08-17 (Supabase migration + Reactive Resume schema mapping):** OLD — `src/` still called a custom ASP.NET Core API / GIST proxy and rendered a generic `MasterCVNode` tree. NEW — `src/` calls Supabase Auth and direct `supabase-js` Storage calls under RLS, and TVC01 renders the real `SuperCVDocument` directly.
 
 ---
 
@@ -29,9 +31,19 @@
 - [x] Implemented Resume feature: `gistApi.ts`/`settingsApi.ts`, `useGist.ts`/`useSettings.ts`, `TreeView.tsx` (TVC01), `MainScreen.tsx` (S002), `ExportDialog.tsx` (S002D1), `ImportDialog.tsx` (S002D2), `SettingsPanel.tsx` (S002S1), and `CancelButton.tsx`.
 - [x] Extended `app/store.ts` with a `resume` slice and an `isTransactionRunning` flag.
 - [x] Added route-level code splitting and a working `.eslintrc.cjs`; `npm run typecheck` and `npm run build` passed at that point.
-- [x] Migrated all seven CONFIG context documents to Supabase Auth + Supabase Storage (`Applai/SuperCV`) and added ADR-017. Actual source-code migration remains outstanding.
+- [x] Migrated all seven CONFIG context documents to Supabase Auth + Supabase Storage (`Applai/SuperCV`) and added ADR-017.
+- [x] **Migrated the actual `src/` implementation** to match both the Supabase (ADR-017) and `SuperCVDocument` (ADR-018) CONFIG passes:
+  - Added `lib/supabase.ts` (Remember-Me-aware `getSupabaseClient()`/`clearLocalSupabaseSession()`), `types/superCV.ts` (`SuperCVDocument`, `SECTION_REGISTRY`, `DETAIL_FIELD_DENYLIST`).
+  - Moved `auth`/`resume` Zustand slices out of `app/store.ts` into `features/auth/stores/authStore.ts` and `features/resume/stores/resumeStore.ts` (now typed `User` from `@supabase/supabase-js` and `superCV`/`pristineSuperCV`/`expandedPaths` respectively); `app/store.ts` keeps only the shared `ui` slice.
+  - Rewrote `authApi.ts`/`useAuth.ts` around `signInWithPassword`/`getSession`/`onAuthStateChange`; `useValidateSession()` now also serves S000's 5s reachability guard (replaces the removed `useHealthCheck()`/`/health` endpoint).
+  - Removed `gistApi.ts`/`useGist.ts`; added `supercvStorageApi.ts`/`useSuperCVStorage.ts` (Storage `list`/`download`/`upload` against fixed `Applai/SuperCV`), `superCVTree.ts` (`flattenSuperCV()`), `buildExportDocument.ts` (prune-and-clone export).
+  - Rewrote `TreeView.tsx` to render `SuperCVDocument` rows directly (checkbox = `hidden` field) and added the item field-detail edit panel (SPEC.md §3.3.3 "Editing") for non-denylisted fields.
+  - Rewrote `MainScreen.tsx`, `ImportDialog.tsx` (fixed-folder file picker, no URL field), `ExportDialog.tsx` (Storage collision-free filename + prune-and-clone export), `CancelButton.tsx` (`isDirty()`/`resetToPristine()`), `SettingsPanel.tsx` (dropped `gistUrl`, added the fixed storage-path note).
+  - Removed the custom `User`/`MasterCVNode`/`GistFile` types from `types/index.ts` (kept `UserSettings`/`SupabaseStorageFile`); rewrote `settingsApi.ts` against a Supabase `user_settings` table; simplified `lib/api.ts` to just the AbortController utilities (+ `raceWithAbort`).
+  - Updated `.env.example`/`package.json` (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, added `@supabase/supabase-js`).
+  - Verified with `npm install && npx tsc --noEmit` (0 errors) and `npx eslint . --ext ts,tsx` (0 errors, 2 pre-existing warnings unrelated to this change).
 
-> **UPDATED 2026-08-17 (Supabase migration):** OLD — the implemented scaffold is documented as calling a GIST/custom-auth backend. NEW — the architectural context now specifies Supabase; existing `src/` must be updated to match before end-to-end testing.
+> **UPDATED 2026-08-17 (Supabase migration + Reactive Resume schema mapping):** OLD — the implemented scaffold called a GIST/custom-auth backend and rendered a generic `MasterCVNode` tree. NEW — `src/` now matches both CONFIG passes end-to-end; remaining work is Supabase project/RLS configuration (not app code) — see Blockers below.
 
 **Last Commit:** *(pending — see PR for this branch)*
 
@@ -41,46 +53,47 @@
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Auth (S000/S001) | 🟡 In progress | UI + existing client logic are complete; must be changed from custom API calls to Supabase Auth SDK calls per ADR-017. |
-| Resume (S002/TVC01/dialogs) | 🟡 In progress | UI + existing client logic are complete; import/export must be changed from GIST calls to `Applai/SuperCV` Storage list/download/upload calls. |
+| Auth (S000/S001) | 🟢 Code complete | `src/` now calls Supabase Auth SDK (`signInWithPassword`/`getSession`/`onAuthStateChange`) directly per ADR-017. Untested end-to-end pending Supabase project configuration (see Blockers). |
+| Resume (S002/TVC01/dialogs) | 🟢 Code complete | TVC01 renders the real `SuperCVDocument` (ADR-018); import/export call `Applai/SuperCV` Storage `list`/`download`/`upload` directly. Untested end-to-end pending Supabase project configuration. |
 | Backend (ASP.NET Core 9) | 🔲 Removed / not needed | No backend is required for current MVP auth and RLS-scoped Storage access; see ADR-017. A minimal serverless function remains a future option only for service-role-key features. |
 | Dashboard | — | N/A — no such screen in this app. |
-| API Integration | 🟡 In progress | AbortController utilities remain useful; custom `apiClient` auth/GIST wrapper must be removed or retired in favor of `supabase-js`. |
-| Tests | 🔲 Not started | Add unit/component/E2E tests after the Supabase source migration (TECH.md §10). |
+| API Integration | 🟢 Code complete | `lib/api.ts` retains only AbortController utilities (+ `raceWithAbort`); the custom `apiClient` auth/GIST wrapper has been fully removed in favor of `supabase-js`. |
+| Tests | 🔲 Not started | Add unit/component/E2E tests now that the Supabase source migration is done (TECH.md §10). |
 | Styling | 🟡 In progress | Tailwind + shadcn/ui are wired to SPEC.md §2 design tokens; not yet pixel-audited against every SPEC layout. |
 
-> **UPDATED 2026-08-17 (Supabase migration):** OLD — the Current State required building an ASP.NET Core backend. NEW — the current MVP needs Supabase project configuration, RLS policies, and source migration rather than a custom backend.
+> **UPDATED 2026-08-17 (Supabase migration + Reactive Resume schema mapping):** OLD — the Current State required building an ASP.NET Core backend and migrating `src/`. NEW — `src/` migration is done; remaining work is Supabase project configuration (Auth + Storage RLS + `user_settings` table), not application code.
 
 ---
 
 ## Blockers & Open Questions
 
-1. `src/` still implements the old custom API/GIST contract; it must be migrated to `@supabase/supabase-js` before login, import, export, and settings can be tested end-to-end.
-2. The Supabase project must define Storage RLS policies for authenticated users' `Applai/SuperCV` objects and supply `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`.
-3. Decide the authoritative persistence location for `UserSettings` now that the custom `/api/user/settings` backend is removed (a Supabase table under RLS is the recommended implementation).
-4. No `CHANGELOG.md` exists yet, though BOUNDARIES.md §8 references one.
-5. Decide whether to enable hCaptcha/Turnstile in Supabase Auth settings and retain optional `VITE_HCAPTCHA_SITEKEY`.
+1. The Supabase project itself must still be configured: create the `Applai` bucket / `SuperCV` folder, define Storage RLS policies scoping objects to the authenticated user, create the `user_settings` table (columns `user_id`, `master_resume_file`, `preferred_cv_name`) with RLS, and supply `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` — the `src/` code side of this is done, but nothing has been tested against a live Supabase project yet.
+2. No `CHANGELOG.md` exists yet, though BOUNDARIES.md §8 references one.
+3. Decide whether to enable hCaptcha/Turnstile in Supabase Auth settings and retain optional `VITE_HCAPTCHA_SITEKEY`.
 
-**Resolved this session:** Repo cleanliness — `VSC/client/` had parallel copies of the scaffold; the obsolete copies were removed and the canonical source folder was renamed `SRC/` → `src/`. Build/typecheck were re-verified at that time.
+**Resolved this session:** `src/` fully migrated to Supabase Auth/Storage + `SuperCVDocument` (see "What Was Done Last Session"); this closes the two source-migration blockers carried from the previous session.
+
+**Resolved previous session:** Repo cleanliness — `VSC/client/` had parallel copies of the scaffold; the obsolete copies were removed and the canonical source folder was renamed `SRC/` → `src/`. Build/typecheck were re-verified at that time.
 
 ---
 
 ## Next Steps (Priority Order)
 
-1. [ ] **Update remaining source code (`src/`) to match the new context docs:** replace custom auth/GIST APIs with the Supabase client, direct Storage operations in `Applai/SuperCV`, and the in-memory Supabase session adapter. This now also includes the `SuperCVDocument`/Section Registry data model (ADR-018) — there is no `MasterCVNode`/`TreeNode` to build against anymore.
-2. [ ] Configure Supabase Auth, bucket `Applai`, folder/path `SuperCV`, and authenticated-user RLS policies; never use the service role key in the browser.
-3. [ ] Decide and implement RLS-scoped user-settings persistence (recommended: Supabase table) for `masterResumeFile` and `preferredCvName`.
-4. [ ] Write unit/component tests for TVC01 selection/virtualization and the Supabase login form (TECH.md §10).
-5. [ ] Add `CHANGELOG.md` and start logging entries per BOUNDARIES.md §8.
-6. [ ] Playwright E2E happy path (login → Storage import → select nodes → Storage export) after the source migration.
+1. [ ] Configure the Supabase project: Auth (email+password), bucket `Applai`, folder/path `SuperCV`, authenticated-user RLS policies, and the `user_settings` table; never use the service role key in the browser.
+2. [ ] Run the app end-to-end against that live Supabase project (login → import → select/edit → export) and fix anything the code-only typecheck/lint pass couldn't catch.
+3. [ ] Write unit/component tests for TVC01 selection/virtualization/field-editing and the Supabase login form (TECH.md §10).
+4. [ ] Add `CHANGELOG.md` and start logging entries per BOUNDARIES.md §8.
+5. [ ] Playwright E2E happy path (login → Storage import → select nodes → Storage export) once a test Supabase project is available.
+6. [ ] Revisit the Resume Mapping topic the user flagged for a separate session (item field-detail editing UX, beyond the generic denylist-based inputs shipped this session).
 
 ---
 
 ## Known Issues
 
-- [ISSUE-1] `npm run lint` reports 3 warnings (react-refresh notices in `router.tsx`/`button.tsx`, one `react-hooks/exhaustive-deps` in `WelcomeScreen.tsx`) — cosmetic, non-blocking, not yet cleaned up.
-- [ISSUE-2] Production bundle vendor chunk is about 404 KB / 129 KB gzip — within TECH.md §9 budget but worth revisiting with `manualChunks` if more routes are added.
-- [ISSUE-3] The existing source still names `gistApi`/`useGist` and calls custom endpoints; this is expected until the priority source migration is completed.
+- [ISSUE-1] `npm run lint` reports 2 pre-existing warnings (react-refresh notices in `router.tsx`/`button.tsx`) — cosmetic, non-blocking, not introduced or touched this session. The `WelcomeScreen.tsx` `exhaustive-deps` warning from the previous entry is now suppressed with an explicit `eslint-disable-next-line` comment (same pattern already used elsewhere in this codebase).
+- [ISSUE-2] Production bundle size has not been re-measured since adding `@supabase/supabase-js`; re-check against TECH.md §9's budget (< 500 KB initial / < 800 KB max) and consider `manualChunks` if needed.
+- [ISSUE-3] *(Resolved this session)* `gistApi.ts`/`useGist.ts` and all custom-endpoint calls have been removed; `src/` now only calls Supabase.
+- [ISSUE-4] The generic item field-detail editor (TreeView.tsx's `ItemFieldDetail`) renders every non-denylisted field as a plain text input, with arrays edited as comma-separated strings. This satisfies SPEC.md §3.3.3's "editable in place" requirement but has no field-type-specific widgets (e.g. rich text, date pickers); the user flagged a deeper look at Resume Mapping/editing UX for a future session.
 
 ---
 
@@ -88,6 +101,7 @@
 
 | Date | Focus | Key Commits | Blockers Resolved |
 |------|-------|--------------|--------------------|
+| 2026-08-17 | Migrated `src/` implementation to Supabase Auth/Storage + `SuperCVDocument` | *(pending commit)* | Both source-migration blockers from the previous entry: custom API/GIST calls replaced with `supabase-js`; generic tree replaced with the real schema and its `hidden` fields. `npx tsc --noEmit` and `npx eslint` both pass. |
 | 2026-08-17 | Mapped the real SuperCV schema (Reactive Resume) onto TVC01 | `90577e3`+ (documentation pass) | Replaced the generic `MasterCVNode` tree with `SuperCVDocument` + Section Registry in TECH/SPEC/PATTERNS; ADR-018 established; selection now reuses the schema's own `hidden` field. |
 | 2026-08-17 | Migrated CONFIG docs to Supabase Auth + Storage | *(documentation pass; pending commit)* | Replaced obsolete GIST/custom-backend architecture in all seven context documents; ADR-017 established. |
 | 2026-08-17 | Reconciled DECISIONS.md/PATTERNS.md with SPEC.md/TECH.md | `046593f` | ADR-007/backend contradiction, PATTERNS.md LOGOUT server-call bug, missing EXIT/CANCEL/Import/Settings patterns. |
