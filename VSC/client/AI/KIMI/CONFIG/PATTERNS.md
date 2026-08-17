@@ -1,6 +1,8 @@
 # PATTERNS.md :: Reusable Code Patterns for Applai Resume Generator
 
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+>
+> **Reactive Resume schema-mapping pass (2026-08-17):** This revision replaces P05's generic `TreeNode[]`/`selected` model with the real `SuperCVDocument` schema and its native `hidden` field (TECH.md §5/§5a, DECISIONS.md ADR-018), and updates P06/P07/P14/P15 to match. See inline "UPDATED 2026-08-17 (Reactive Resume schema mapping)" callouts.
 
 * -> Use these patterns when implementing any feature from SPEC.md.
 * -> Never deviate from these patterns without updating this file.
@@ -604,58 +606,99 @@ export function ExportDialog({ open, onOpenChange, onExport }: ExportDialogProps
 
 ## P05 — TreeView Component Pattern (TVC01)
 
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — TVC01 rendered a generic `TreeNode[]` with its own `selected`/`expanded` flags, and the Zustand store held a `masterCV: TreeNode[]` copy. NEW — TVC01 renders the real `SuperCVDocument` (TECH.md §5) directly; the checkbox toggles that document's own `hidden` field (Topic and Item rows only, per DECISIONS.md ADR-018), and only `expandedPaths` is separate client-side UI state.
+
+```typescript
+// features/resume/utils/superCVTree.ts — the schema-aware flatten function
+import type { SuperCVDocument, SuperCVSection, SuperCVSectionItem, SectionKey } from '@/types/superCV';
+import { SECTION_REGISTRY, SECTION_REGISTRY_FALLBACK, type SectionRegistryEntry } from '@/types/superCV';
+
+export type RowKind = 'topic' | 'item';
+
+export interface FlatRow {
+  path: string;          // e.g. "sections.experience" or "sections.experience.items.2" or "customSections.0"
+  depth: 0 | 1;          // Topic = 0, Item = 1 — this is the app's max selectable depth (DECISIONS.md ADR-018)
+  kind: RowKind;
+  label: string;         // derived from Section Registry titleFields, or the item's first string field as fallback
+  hidden: boolean;       // bound directly to the underlying section/item's own `hidden` field
+  hasChildren: boolean;
+  data: SuperCVSection | SuperCVSectionItem;
+}
+
+function registryFor(key: string): SectionRegistryEntry {
+  return (SECTION_REGISTRY as Record<string, SectionRegistryEntry>)[key]
+    ?? { displayName: titleCase(key), ...SECTION_REGISTRY_FALLBACK };
+}
+
+function titleCase(key: string): string {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+}
+
+function itemLabel(item: SuperCVSectionItem, registry: SectionRegistryEntry): string {
+  const parts = registry.titleFields
+    .map((field) => item[field])
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+  if (parts.length) return parts.join(' · ');
+  // Generic fallback (customSections / unknown keys): first non-empty string field, excluding id/hidden.
+  const fallback = Object.entries(item).find(
+    ([key, value]) => key !== 'id' && key !== 'hidden' && typeof value === 'string' && value.trim().length > 0
+  );
+  return fallback ? String(fallback[1]) : '(untitled)';
+}
+
+// Builds the flat, virtualization-ready row list. `displayAll` and `expandedPaths`
+// are the ONLY two things that affect visibility beyond the document's own `hidden`
+// flags — there is no separate selection state to fall out of sync with.
+export function flattenSuperCV(
+  doc: SuperCVDocument | null,
+  expandedPaths: Set<string>,
+  displayAll: boolean
+): FlatRow[] {
+  if (!doc) return [];
+  const rows: FlatRow[] = [];
+
+  const pushTopic = (key: string, section: SuperCVSection, path: string) => {
+    if (!displayAll && section.hidden) return;
+    const registry = registryFor(key);
+    rows.push({ path, depth: 0, kind: 'topic', label: registry.displayName, hidden: section.hidden, hasChildren: section.items.length > 0, data: section });
+    if (!expandedPaths.has(path)) return;
+    section.items.forEach((item, i) => {
+      if (!displayAll && item.hidden) return;
+      const itemPath = `${path}.items.${i}`;
+      rows.push({ path: itemPath, depth: 1, kind: 'item', label: itemLabel(item, registry), hidden: item.hidden, hasChildren: false, data: item });
+    });
+  };
+
+  (Object.entries(doc.sections) as [SectionKey, SuperCVSection | undefined][]).forEach(([key, section]) => {
+    if (section) pushTopic(key, section, `sections.${key}`);
+  });
+  doc.customSections.forEach((section, i) => pushTopic(section.name ?? `custom${i}`, section, `customSections.${i}`));
+
+  return rows;
+}
+```
+
 ```typescript
 // features/resume/components/TreeView.tsx
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useRef, useState, useCallback } from 'react';
+import { useRef } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronRight, ChevronDown } from 'lucide-react';
-
-export interface TreeNode {
-  id: string;
-  label: string;
-  selected: boolean;
-  expanded: boolean;
-  info?: string;
-  children?: TreeNode[];
-}
+import { flattenSuperCV, type FlatRow } from '../utils/superCVTree';
+import { useResumeStore } from '../stores/resumeStore';
 
 interface TreeViewProps {
-  nodes: TreeNode[];
   displayAll: boolean;
-  onToggleSelect: (id: string) => void;
-  onToggleExpand: (id: string) => void;
-  onUpdateInfo: (id: string, info: string) => void;
+  onExpandItem: (row: FlatRow) => void; // opens the field-detail/edit panel (P05 continued below)
 }
 
-export function TreeView({
-  nodes,
-  displayAll,
-  onToggleSelect,
-  onToggleExpand,
-  onUpdateInfo,
-}: TreeViewProps) {
+export function TreeView({ displayAll, onExpandItem }: TreeViewProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-
-  // Flatten visible nodes based on displayAll + expanded state
-  const flattenNodes = useCallback((nodeList: TreeNode[], depth = 0): Array<{ node: TreeNode; depth: number }> => {
-    const result: Array<{ node: TreeNode; depth: number }> = [];
-    for (const node of nodeList) {
-      const isVisible = displayAll || node.selected || hasSelectedDescendant(node);
-      if (!isVisible) continue;
-
-      result.push({ node, depth });
-      if (node.expanded && node.children) {
-        result.push(...flattenNodes(node.children, depth + 1));
-      }
-    }
-    return result;
-  }, [displayAll]);
-
-  const flatNodes = flattenNodes(nodes);
+  const { superCV, expandedPaths, toggleHidden, toggleExpanded } = useResumeStore();
+  const rows = flattenSuperCV(superCV, expandedPaths, displayAll);
 
   const virtualizer = useVirtualizer({
-    count: flatNodes.length,
+    count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 40,
     overscan: 5,
@@ -665,58 +708,32 @@ export function TreeView({
     <div ref={parentRef} className="h-[600px] overflow-auto border rounded-lg">
       <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
         {virtualizer.getVirtualItems().map((virtualItem) => {
-          const { node, depth } = flatNodes[virtualItem.index];
-          const hasChildren = node.children && node.children.length > 0;
-
+          const row = rows[virtualItem.index];
           return (
             <div
-              key={node.id}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualItem.size}px`,
-                transform: `translateY(${virtualItem.start}px)`,
-                paddingLeft: `${depth * 24 + 12}px`,
-              }}
+              key={row.path}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)`, paddingLeft: `${row.depth * 24 + 12}px` }}
               className="flex items-center gap-2 hover:bg-slate-50 border-b border-slate-100"
-              onDoubleClick={() => hasChildren && onToggleExpand(node.id)}
+              onDoubleClick={() => (row.hasChildren ? toggleExpanded(row.path) : onExpandItem(row))}
             >
-              {hasChildren ? (
-                <button
-                  onClick={() => onToggleExpand(node.id)}
-                  className="p-1 hover:bg-slate-200 rounded"
-                  aria-label={node.expanded ? 'Collapse' : 'Expand'}
-                >
-                  {node.expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {row.hasChildren ? (
+                <button onClick={() => toggleExpanded(row.path)} className="p-1 hover:bg-slate-200 rounded" aria-label={expandedPaths.has(row.path) ? 'Collapse' : 'Expand'}>
+                  {expandedPaths.has(row.path) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </button>
               ) : (
                 <span className="w-6" />
               )}
 
-              <Checkbox
-                checked={node.selected}
-                onCheckedChange={() => onToggleSelect(node.id)}
-                aria-label={`Select ${node.label}`}
-              />
+              {/* Checked = hidden:false, unchecked = hidden:true — the checkbox toggles the document's own field (DECISIONS.md ADR-018). No field-level checkbox exists — the schema has no per-field hidden flag. */}
+              <Checkbox checked={!row.hidden} onCheckedChange={() => toggleHidden(row.path)} aria-label={`Select ${row.label}`} />
 
-              <span className="text-sm font-medium">{node.label}</span>
-
-              {node.info && (
-                <span className="text-xs text-slate-500 ml-2">{node.info}</span>
-              )}
+              <span className="text-sm font-medium">{row.label}</span>
             </div>
           );
         })}
       </div>
     </div>
   );
-}
-
-function hasSelectedDescendant(node: TreeNode): boolean {
-  if (!node.children) return false;
-  return node.children.some((child) => child.selected || hasSelectedDescendant(child));
 }
 ```
 
@@ -725,55 +742,74 @@ function hasSelectedDescendant(node: TreeNode): boolean {
 ```typescript
 // features/resume/stores/resumeStore.ts
 import { create } from 'zustand';
-import { TreeNode } from '../components/TreeView';
+import type { SuperCVDocument } from '@/types/superCV';
 
 interface ResumeState {
-  masterCV: TreeNode[] | null;
+  superCV: SuperCVDocument | null;
+  pristineSuperCV: SuperCVDocument | null; // last-loaded copy, used by CANCEL Case B (P14) to revert edits
+  expandedPaths: Set<string>;
   displayAll: boolean;
-  setMasterCV: (nodes: TreeNode[]) => void;
-  toggleNodeSelect: (id: string) => void;
-  toggleNodeExpand: (id: string) => void;
+  storageFilename: string | null;
+  setSuperCV: (doc: SuperCVDocument) => void; // used on import; forces every hidden to false (SPEC.md §3.5.5)
+  setStorageFilename: (filename: string) => void;
+  toggleHidden: (path: string) => void;       // the ONLY selection mechanism — no separate selected flag
+  toggleExpanded: (path: string) => void;     // client-side only; never written into superCV
   setDisplayAll: (value: boolean) => void;
-  getSelectedSubset: () => TreeNode[];
+  resetToPristine: () => void;                // CANCEL Case B — revert hidden flags + edits, keep expandedPaths
+  isDirty: () => boolean;
 }
 
-function toggleNodeInTree(nodes: TreeNode[], id: string, key: 'selected' | 'expanded'): TreeNode[] {
-  return nodes.map((node) => {
-    if (node.id === id) {
-      return { ...node, [key]: !node[key] };
-    }
-    if (node.children) {
-      return { ...node, children: toggleNodeInTree(node.children, id, key) };
-    }
-    return node;
+// Generic path resolver — works for "sections.experience", "sections.experience.items.2",
+// and "customSections.0" alike, so no per-section-type code is needed here.
+function getAtPath(doc: SuperCVDocument, path: string): Record<string, unknown> {
+  return path.split('.').reduce<any>((node, key) => node[key], doc);
+}
+
+function forceAllHiddenFalse(doc: SuperCVDocument): SuperCVDocument {
+  const clone = structuredClone(doc);
+  Object.values(clone.sections).forEach((section) => {
+    if (!section) return;
+    section.hidden = false;
+    section.items.forEach((item) => { item.hidden = false; });
   });
-}
-
-function filterSelected(nodes: TreeNode[]): TreeNode[] {
-  return nodes
-    .filter((n) => n.selected)
-    .map((n) => ({
-      ...n,
-      children: n.children ? filterSelected(n.children) : undefined,
-    }));
+  clone.customSections.forEach((section) => {
+    section.hidden = false;
+    section.items.forEach((item) => { item.hidden = false; });
+  });
+  return clone;
 }
 
 export const useResumeStore = create<ResumeState>((set, get) => ({
-  masterCV: null,
+  superCV: null,
+  pristineSuperCV: null,
+  expandedPaths: new Set(),
   displayAll: false,
-  setMasterCV: (nodes) => set({ masterCV: nodes }),
-  toggleNodeSelect: (id) =>
-    set((state) => ({
-      masterCV: state.masterCV ? toggleNodeInTree(state.masterCV, id, 'selected') : null,
-    })),
-  toggleNodeExpand: (id) =>
-    set((state) => ({
-      masterCV: state.masterCV ? toggleNodeInTree(state.masterCV, id, 'expanded') : null,
-    })),
+  storageFilename: null,
+  setSuperCV: (doc) => {
+    const forced = forceAllHiddenFalse(doc); // SPEC.md §3.5.5 — first-import default is everything selected
+    set({ superCV: forced, pristineSuperCV: structuredClone(forced) });
+  },
+  setStorageFilename: (filename) => set({ storageFilename: filename }),
+  toggleHidden: (path) =>
+    set((state) => {
+      if (!state.superCV) return state;
+      const clone = structuredClone(state.superCV);
+      const node = getAtPath(clone, path);
+      node.hidden = !node.hidden;
+      return { superCV: clone };
+    }),
+  toggleExpanded: (path) =>
+    set((state) => {
+      const next = new Set(state.expandedPaths);
+      next.has(path) ? next.delete(path) : next.add(path);
+      return { expandedPaths: next };
+    }),
   setDisplayAll: (value) => set({ displayAll: value }),
-  getSelectedSubset: () => {
-    const { masterCV } = get();
-    return masterCV ? filterSelected(masterCV) : [];
+  resetToPristine: () =>
+    set((state) => ({ superCV: state.pristineSuperCV ? forceAllHiddenFalse(state.pristineSuperCV) : null })),
+  isDirty: () => {
+    const { superCV, pristineSuperCV } = get();
+    return JSON.stringify(superCV) !== JSON.stringify(pristineSuperCV);
   },
 }));
 ```
@@ -787,7 +823,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
 ```typescript
 // features/resume/api/supercvStorageApi.ts
 import { getSupabaseClient } from '@/lib/supabase';
-import type { TreeNode } from '../components/TreeView';
+import type { SuperCVDocument } from '@/types/superCV';
 
 export interface SupabaseStorageFile { name: string; path: string; size?: number; updated_at?: string; }
 const BUCKET = 'Applai';
@@ -805,10 +841,12 @@ export async function listSuperCVFiles(): Promise<SupabaseStorageFile[]> {
   return (data ?? []).map((file) => ({ name: file.name, path: objectPath(file.name), size: file.metadata?.size, updated_at: file.updated_at }));
 }
 
-export async function loadSuperCVFile(filename: string): Promise<TreeNode[]> {
+// UPDATED 2026-08-17 (Reactive Resume schema mapping): OLD returned TreeNode[].
+// NEW returns the SuperCVDocument as-is — no transform to/from a generic tree.
+export async function loadSuperCVFile(filename: string): Promise<SuperCVDocument> {
   const { data, error } = await getSupabaseClient().storage.from(BUCKET).download(objectPath(filename));
   if (error) throw error;
-  return JSON.parse(await data.text()) as TreeNode[]; // validate with Zod before storing in production
+  return JSON.parse(await data.text()) as SuperCVDocument; // validate with Zod before storing in production
 }
 
 export async function getAvailableExportFilename(baseName: string): Promise<string> {
@@ -822,7 +860,9 @@ export async function getAvailableExportFilename(baseName: string): Promise<stri
   throw new Error('Export failed: too many files with this name. Please choose a different name.');
 }
 
-export async function uploadSuperCVFile(filename: string, content: TreeNode[]): Promise<void> {
+// `content` here is already the PRUNED document produced by buildExportDocument()
+// (P07) — this function only uploads; it does not know about `hidden` at all.
+export async function uploadSuperCVFile(filename: string, content: SuperCVDocument): Promise<void> {
   const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
   const { error } = await getSupabaseClient().storage.from(BUCKET).upload(objectPath(filename), blob, { upsert: false });
   if (error) throw error;
@@ -832,11 +872,12 @@ export async function uploadSuperCVFile(filename: string, content: TreeNode[]): 
 ```typescript
 // features/resume/hooks/useSuperCVStorage.ts
 import { useMutation, useQuery } from '@tanstack/react-query';
+import type { SuperCVDocument } from '@/types/superCV';
 import { superCVKeys, listSuperCVFiles, loadSuperCVFile, uploadSuperCVFile, getAvailableExportFilename } from '../api/supercvStorageApi';
 
 export function useSuperCVFiles() { return useQuery({ queryKey: superCVKeys.files, queryFn: listSuperCVFiles }); }
 export function useLoadSuperCV(filename: string) { return useQuery({ queryKey: superCVKeys.load(filename), queryFn: () => loadSuperCVFile(filename), enabled: Boolean(filename) }); }
-export function useExportSuperCV() { return useMutation({ mutationFn: ({ filename, content }: { filename: string; content: TreeNode[] }) => uploadSuperCVFile(filename, content) }); }
+export function useExportSuperCV() { return useMutation({ mutationFn: ({ filename, content }: { filename: string; content: SuperCVDocument }) => uploadSuperCVFile(filename, content) }); }
 export function useAvailableExportFilename() { return useMutation({ mutationFn: getAvailableExportFilename }); }
 ```
 
@@ -844,26 +885,65 @@ export function useAvailableExportFilename() { return useMutation({ mutationFn: 
 
 ## P07 — Export Flow Pattern
 
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — P07 called `getSelectedSubset()`, which filtered a generic `TreeNode[]` by its `selected` flag. NEW — `buildExportDocument()` deep-clones the live `SuperCVDocument` and physically removes anything whose `hidden === true`, leaving `basics`/`picture`/`metadata` untouched (SPEC.md §3.3.5, DECISIONS.md ADR-018).
+
+```typescript
+// features/resume/utils/buildExportDocument.ts
+import type { SuperCVDocument, SuperCVSection } from '@/types/superCV';
+
+// Prunes hidden items out of a section's items[], and reports whether the
+// section itself should be dropped (hidden itself, or left with no items).
+function pruneSection(section: SuperCVSection): SuperCVSection | null {
+  if (section.hidden) return null;
+  const items = section.items.filter((item) => !item.hidden);
+  if (items.length === 0) return null;
+  return { ...section, items };
+}
+
+// Deep-clones the loaded document and removes every hidden section/item.
+// basics, picture, and metadata are copied through completely unchanged —
+// they were never part of the selectable tree (SPEC.md §3.3.3).
+export function buildExportDocument(doc: SuperCVDocument): SuperCVDocument {
+  const clone = structuredClone(doc);
+  const prunedSections: SuperCVDocument['sections'] = {};
+  (Object.keys(clone.sections) as Array<keyof SuperCVDocument['sections']>).forEach((key) => {
+    const section = clone.sections[key];
+    if (!section) return;
+    const pruned = pruneSection(section);
+    if (pruned) prunedSections[key] = pruned;
+  });
+  const prunedCustomSections = clone.customSections
+    .map(pruneSection)
+    .filter((section): section is SuperCVDocument['customSections'][number] => section !== null);
+  return { ...clone, sections: prunedSections, customSections: prunedCustomSections };
+}
+
+export function hasAnySelectedContent(doc: SuperCVDocument): boolean {
+  const exported = buildExportDocument(doc);
+  return Object.keys(exported.sections).length > 0 || exported.customSections.length > 0;
+}
+```
+
 ```typescript
 // features/resume/components/MainScreen.tsx (export logic)
 import { useState } from 'react';
 import { useResumeStore } from '../stores/resumeStore';
 import { useExportSuperCV, useAvailableExportFilename } from '../hooks/useSuperCVStorage';
+import { buildExportDocument, hasAnySelectedContent } from '../utils/buildExportDocument';
 import { ExportDialog } from './ExportDialog';
 import { useMessage } from '@/hooks/useMessage';
 
 export function MainScreen() {
   const [exportOpen, setExportOpen] = useState(false);
-  const { getSelectedSubset } = useResumeStore();
+  const { superCV } = useResumeStore();
   const exportMutation = useExportSuperCV();
   const filenameMutation = useAvailableExportFilename();
   const { showSuccess, showError } = useMessage();
   const handleExport = async (baseName: string) => {
-    const selectedNodes = getSelectedSubset();
-    if (!selectedNodes.length) return showError('No nodes selected. Please select at least one node to export.');
+    if (!superCV || !hasAnySelectedContent(superCV)) return showError('No nodes selected. Please select at least one node to export.');
     try {
       const filename = await filenameMutation.mutateAsync(baseName);
-      await exportMutation.mutateAsync({ filename, content: selectedNodes });
+      await exportMutation.mutateAsync({ filename, content: buildExportDocument(superCV) });
       showSuccess(`CV exported successfully as ${filename}`);
     } catch { showError('Export failed. Please try again.'); }
   };
@@ -1114,6 +1194,8 @@ export function ExitButton({ id = 's002-exit' }: { id?: string }) {
 ## P14 — CANCEL Button Pattern (Transaction Abort / Node Reset)
 
 > Added 2026-08-17 to close a gap: SPEC.md §3.6.5 defines three distinct CANCEL cases (running transaction / dirty tree / nothing to cancel) with no prior pattern.
+>
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — `isDirty`/`resetAllToSelected` were separate flags on the generic tree store, backed by a recursive `setAllSelected()` helper. NEW — P05's `useResumeStore` already provides `isDirty()` (compares `superCV` against `pristineSuperCV`) and `resetToPristine()` (re-applies `forceAllHiddenFalse` to the pristine copy) — no separate helper is needed here.
 
 ```typescript
 // features/resume/components/CancelButton.tsx
@@ -1125,17 +1207,17 @@ import { useResumeStore } from '../stores/resumeStore';
 import { useMessage } from '@/hooks/useMessage';
 
 interface CancelButtonProps {
-  isTransactionRunning: boolean; // true if any import/export/settings-save/health call is in flight
+  isTransactionRunning: boolean; // true if any import/export/settings-save/reachability call is in flight
 }
 
 export function CancelButton({ isTransactionRunning }: CancelButtonProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const { isDirty, resetAllToSelected } = useResumeStore();
+  const { isDirty, resetToPristine } = useResumeStore();
   const { showInfo } = useMessage();
 
   const handleClick = () => {
     // Case C — nothing to cancel: auto-dismiss info, no confirmation needed
-    if (!isTransactionRunning && !isDirty) {
+    if (!isTransactionRunning && !isDirty()) {
       showInfo('Nothing to cancel.');
       return;
     }
@@ -1149,8 +1231,8 @@ export function CancelButton({ isTransactionRunning }: CancelButtonProps) {
       abortAllRequests();
       return;
     }
-    // Case B — discard modifications: reset every node to selected, revert text edits
-    resetAllToSelected();
+    // Case B — discard modifications: reset every section/item hidden flag to false, revert edits
+    resetToPristine();
   };
 
   const message = isTransactionRunning
@@ -1175,32 +1257,6 @@ export function CancelButton({ isTransactionRunning }: CancelButtonProps) {
     </>
   );
 }
-```
-
-**Required store additions** (`features/resume/stores/resumeStore.ts`, extending P05's `useResumeStore`):
-
-```typescript
-// Add to ResumeState in P05:
-interface ResumeState {
-  // ...existing fields from P05...
-  isDirty: boolean; // true if any node was deselected or any info text edited since load
-  resetAllToSelected: () => void;
-}
-
-function setAllSelected(nodes: TreeNode[]): TreeNode[] {
-  return nodes.map((n) => ({
-    ...n,
-    selected: true,
-    children: n.children ? setAllSelected(n.children) : undefined,
-  }));
-}
-
-// Inside create<ResumeState>((set, get) => ({ ... })):
-//   resetAllToSelected: () =>
-//     set((state) => ({
-//       masterCV: state.masterCV ? setAllSelected(state.masterCV) : null,
-//       isDirty: false,
-//     })),
 ```
 
 **Rule (SPEC.md §3.6.5):** CANCEL never navigates away from S002 — it only aborts requests or resets tree state in place.
@@ -1233,7 +1289,7 @@ interface ImportDialogProps { open: boolean; onOpenChange: (open: boolean) => vo
 export function ImportDialog({ open, onOpenChange, defaultFilename = '' }: ImportDialogProps) {
   const { register, handleSubmit, reset, formState: { errors, isValid } } = useForm<ImportFormData>({ resolver: zodResolver(importSchema), defaultValues: { filename: defaultFilename }, mode: 'onBlur' });
   const filesQuery = useSuperCVFiles();
-  const { setMasterCV, setStorageFilename } = useResumeStore();
+  const { setSuperCV, setStorageFilename } = useResumeStore();
   const { showSuccess, showError } = useMessage();
   useEffect(() => {
     if (!open || !filesQuery.data) return;
@@ -1241,7 +1297,7 @@ export function ImportDialog({ open, onOpenChange, defaultFilename = '' }: Impor
     reset({ filename: jsonNames.includes(defaultFilename) ? defaultFilename : jsonNames[0] ?? '' });
   }, [open, filesQuery.data, defaultFilename, reset]);
   const onSubmit = async ({ filename }: ImportFormData) => {
-    try { const nodes = await loadSuperCVFile(filename); setMasterCV(nodes); setStorageFilename(filename); onOpenChange(false); showSuccess(`SuperCV file loaded: ${filename}`); }
+    try { const doc = await loadSuperCVFile(filename); setSuperCV(doc); setStorageFilename(filename); onOpenChange(false); showSuccess(`SuperCV file loaded: ${filename}`); }
     catch { showError('SuperCV folder or selected file is not accessible. Please try another file.'); }
   };
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-[420px]">
@@ -1256,7 +1312,9 @@ export function ImportDialog({ open, onOpenChange, defaultFilename = '' }: Impor
 }
 ```
 
-**Auto-open on S002 mount (SPEC.md §3.5.6):** when `masterCV === null` after the 500ms mount delay, set `isImportOpen = true`; on cancellation show *"No SuperCV master file loaded. Click 'Load from SuperCV' to import."*
+**Auto-open on S002 mount (SPEC.md §3.5.6):** when `superCV === null` after the 500ms mount delay, set `isImportOpen = true`; on cancellation show *"No SuperCV master file loaded. Click 'Load from SuperCV' to import."*
+
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — `setMasterCV(nodes)` stored a generic `TreeNode[]`; the mount check was `masterCV === null`. NEW — `setSuperCV(doc)` stores the real document and forces every `hidden` to `false` (SPEC.md §3.5.5); the mount check is `superCV === null`.
 
 ---
 
@@ -1304,8 +1362,8 @@ export function useSaveSettings() { const queryClient = useQueryClient(); return
 | Hook | use[camelCase].ts | `useAuth.ts`, `useSuperCVStorage.ts`, `useSettings.ts`, `useTreeView.ts` |
 | Store | [feature]Store.ts | `authStore.ts`, `resumeStore.ts` |
 | API | [feature]Api.ts | `authApi.ts`, `supercvStorageApi.ts`, `settingsApi.ts` |
-| Type | [Name].ts or inline | `TreeNode`, `User`, `UserSettings` |
-| Utility | camelCase.ts | `apiErrorHandler.ts` |
+| Type | [Name].ts or inline | `SuperCVDocument`, `SectionRegistryEntry`, `User`, `UserSettings` |
+| Utility | camelCase.ts | `apiErrorHandler.ts`, `superCVTree.ts`, `buildExportDocument.ts` |
 | Test | [Name].test.tsx | `LoginForm.test.tsx` |
 | Route component | [Name]Screen.tsx | `WelcomeScreen.tsx`, `MainScreen.tsx` |
 

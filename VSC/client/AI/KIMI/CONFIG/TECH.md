@@ -1,6 +1,8 @@
 # TECH.md :: TechStack Applai_Generator for KIMI.com vibecoding
 
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+>
+> **Reactive Resume schema-mapping pass (2026-08-17):** This revision replaces the generic, app-invented `MasterCVNode` tree with `SuperCVDocument` — the actual Reactive Resume export schema confirmed against the sample file at `VSC/data/SuperCV/supercv.json`. TVC01 now toggles the schema's own `hidden` fields instead of a separate selection concept; see §5/§5a and DECISIONS.md ADR-018, plus inline "UPDATED 2026-08-17 (Reactive Resume schema mapping)" callouts.
 
 * -> this document is based on [TECH template](../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/TECH_template.md)
 
@@ -82,7 +84,7 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   |   |       ├── components/    # S002, TVC01, S002D1, S002D2, S002S1 components
 |   |   |   |       ├── hooks/         # useSuperCVFiles/useLoadSuperCV/useExportSuperCV, useTreeView, useSettings  <!-- UPDATED 2026-08-17 (Supabase migration): OLD "useGist" -->
 |   |   |   |       ├── stores/        # Resume Zustand slice
-|   |   |   |       ├── types/         # MasterCV JSON types, UserSettings types
+|   |   |   |       ├── types/         # SuperCVDocument / Section Registry types (§5, §5a), UserSettings types  <!-- UPDATED 2026-08-17 (Reactive Resume schema mapping): OLD "MasterCV JSON types" -->
 |   |   |   |       └── utils/         # Tree helpers, export helpers
 |   |   |   ├── hooks/                 # Global shared hooks
 |   |   |   ├── lib/                   # Utilities, helpers
@@ -158,26 +160,97 @@ interface UserSettings {
   preferredCvName?: string;
 }
 
-interface MasterCVNode {
-  id: string;
-  label: string;
-  selected: boolean;
-  expanded: boolean;
-  info?: string;
-  children?: MasterCVNode[];
-}
-
 interface SupabaseStorageFile {
   name: string;
   path: string;
   size?: number;
   updated_at?: string;
 }
+
+// --- SuperCV document (the actual Reactive Resume export schema) ---------
+// See §5a for the companion Section Registry and DECISIONS.md ADR-018 for
+// why this replaces the earlier generic MasterCVNode tree.
+
+type SectionKey =
+  | 'profiles' | 'experience' | 'education' | 'projects' | 'skills'
+  | 'languages' | 'interests' | 'awards' | 'certifications'
+  | 'publications' | 'volunteer' | 'references';
+
+// An item's OWN fields differ per SectionKey (e.g. experience has
+// company/position/period/description/roles; skills has name/level/keywords)
+// but every item, regardless of section, consistently carries id + hidden.
+interface SuperCVSectionItem {
+  id: string;
+  hidden: boolean;
+  [field: string]: unknown;
+}
+
+interface SuperCVSection {
+  title: string;
+  icon: string;
+  columns: number;
+  hidden: boolean;
+  keepTogether: boolean;
+  startOnNewPage: boolean;
+  items: SuperCVSectionItem[];
+}
+
+interface SuperCVCustomSection extends SuperCVSection {
+  id: string;
+  name: string; // shape unconfirmed by the sample data (customSections is empty there); handle generically
+}
+
+interface SuperCVDocument {
+  picture: Record<string, unknown>;   // no `hidden` flag — never part of TVC01's selectable tree
+  basics: Record<string, unknown>;    // no `hidden` flag — never part of TVC01's selectable tree
+  summary: { title: string; icon: string; columns: number; hidden: boolean; keepTogether: boolean; startOnNewPage: boolean; content: string };
+  sections: Partial<Record<SectionKey, SuperCVSection>>; // any key may be absent or have an empty items[]
+  customSections: SuperCVCustomSection[];
+  metadata: Record<string, unknown>;  // template/layout/design/typography/stylesheet — presentation only, copied through unchanged on export
+}
 ```
 
-> **Note:** `SupabaseStorageFile` maps the metadata returned by `supabase.storage.from('Applai').list('SuperCV')`. Download a selected object, call `.text()`, then `JSON.parse` and validate it into `MasterCVNode[]`.
+> **Note:** `SupabaseStorageFile` maps the metadata returned by `supabase.storage.from('Applai').list('SuperCV')`. Download a selected object, call `.text()`, then `JSON.parse` and validate it into a `SuperCVDocument`.
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — `GistFile` represented a backend-proxied GIST listing. NEW — `SupabaseStorageFile` represents fixed-folder Supabase Storage metadata.
+
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — `MasterCVNode` was a generic, app-invented recursive tree (`id/label/selected/expanded/info/children`) with no relationship to the real master-file format. NEW — `SuperCVDocument` models the actual Reactive Resume export schema confirmed against the sample data at `VSC/data/SuperCV/supercv.json`. TVC01 (SPEC.md §3.3.3) renders this document directly and toggles its existing `hidden` fields instead of a separate selection concept. See DECISIONS.md ADR-018.
+
+### 5a. Section Registry (Display Metadata Only — Never Structural)
+
+The registry below supplies presentation hints for the twelve known Reactive Resume section keys, plus one fallback entry used for `customSections` and any future/unrecognized key. It never changes what data exists or how selection/export works — removing an entry, or feeding it an unknown key, only degrades the *label*, never breaks the tree.
+
+```typescript
+interface SectionRegistryEntry {
+  displayName: string;
+  titleFields: string[];   // 1–3 fields concatenated for an item's collapsed-row label; missing fields are skipped, not errored
+  detailField?: string;    // the primary long/rich-text field shown when an item is expanded
+}
+
+const SECTION_REGISTRY: Record<SectionKey, SectionRegistryEntry> = {
+  profiles:       { displayName: 'Profiles',       titleFields: ['network', 'username'] },
+  experience:     { displayName: 'Experience',     titleFields: ['position', 'company', 'period'], detailField: 'description' },
+  education:      { displayName: 'Education',      titleFields: ['degree', 'school', 'period'],     detailField: 'description' },
+  projects:       { displayName: 'Projects',        titleFields: ['name', 'period'],                 detailField: 'description' },
+  skills:         { displayName: 'Skills',          titleFields: ['name'],                            detailField: 'keywords' },
+  languages:      { displayName: 'Languages',       titleFields: ['language', 'fluency'] },
+  interests:      { displayName: 'Interests',       titleFields: ['name'],                            detailField: 'keywords' },
+  awards:         { displayName: 'Awards',          titleFields: ['title', 'awarder', 'date'],        detailField: 'description' },
+  certifications: { displayName: 'Certifications',  titleFields: ['title', 'issuer', 'date'],         detailField: 'description' },
+  publications:   { displayName: 'Publications',    titleFields: ['title', 'publisher', 'date'],      detailField: 'description' },
+  volunteer:      { displayName: 'Volunteering',    titleFields: ['organization', 'period'],          detailField: 'description' },
+  references:     { displayName: 'References',      titleFields: ['name'] },
+};
+
+// Fallback for customSections entries and any key not listed above: title-case
+// the raw key for displayName, use the first string-valued field found on an
+// item as its title, and the first long/HTML-looking string field as detail.
+const SECTION_REGISTRY_FALLBACK: Omit<SectionRegistryEntry, 'displayName'> = {
+  titleFields: [], // resolved dynamically per item at render time
+};
+```
+
+**Denylist for the generic field-detail view** (fields never shown as editable content, on any item, regardless of section): `id`, `hidden`, `iconColor`, `borderRadius`, `borderColor`, `borderWidth`, `shadowColor`, `shadowWidth`, `rotation`, `aspectRatio` — these are Reactive Resume presentation/styling metadata, not resume content, and are always carried through unchanged rather than surfaced for editing.
 
 ## 6. API Contract
 
@@ -196,7 +269,7 @@ interface SupabaseStorageFile {
 | SDK call | Input | Result / use | Authentication |
 | -------- | ----- | ------------ | -------------- |
 | `supabase.storage.from('Applai').list('SuperCV')` | optional list options | `SupabaseStorageFile[]`; list master/exported files and derive collision checks | Supabase Auth JWT + Storage RLS |
-| `supabase.storage.from('Applai').download('SuperCV/<filename>')` | object path | `Blob`; call `.text()` then `JSON.parse` to load MasterCV data | Supabase Auth JWT + Storage RLS |
+| `supabase.storage.from('Applai').download('SuperCV/<filename>')` | object path | `Blob`; call `.text()` then `JSON.parse` to load a `SuperCVDocument` (§5) | Supabase Auth JWT + Storage RLS |
 | `supabase.storage.from('Applai').upload('SuperCV/<filename>', blob, { upsert: false })` | object path and JSON Blob | creates generated CV object; client lists names first for auto-suffixing | Supabase Auth JWT + Storage RLS |
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — `/api/auth/*` and `/api/gist/*` REST endpoints were served by a custom backend. NEW — the SPA uses Supabase Auth and direct Storage SDK calls; no separate collision-check endpoint exists.
@@ -255,9 +328,9 @@ interface SupabaseStorageFile {
 **Global store slices:**
 * `auth`: `{ user, accessToken, isAuthenticated, isLoading, setAuth(), clearAuth(), setLoading() }`
 * `ui`: `{ theme, sidebarOpen, activeModal, toastQueue, settings: UserSettings | null, isExportOpen, isImportOpen, isSettingsOpen }`
-* `resume`: `{ masterCV: MasterCVNode[] | null, displayAll: boolean }`
+* `resume`: `{ superCV: SuperCVDocument | null, expandedPaths: Set<string>, displayAll: boolean }`
 
-> **Note:** `selectedNodes` is NOT a separate Set. Selection state is a property of each `MasterCVNode` (`selected: boolean`). Derive selected subsets by traversing `masterCV` tree. Cache derived selections in `localStorage` (key: `applai_selection_{userId}`) for session persistence.
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — the `resume` slice held a generic `masterCV: MasterCVNode[]` tree with `selected` flags, and a note explicitly warned against a separate selection Set. NEW — `superCV` holds the *actual* parsed document; selection IS the document's own `hidden` fields (TECH.md §5/§5a), so there is still no separate selection Set — only `expandedPaths` is separate, because expand/collapse has no Reactive Resume equivalent and must never be written into the document. Derive the visible/selected subset by walking `superCV.sections`/`customSections` directly (PATTERNS.md P05); do not cache a derived subset in `localStorage` — cache the SuperCV document and `expandedPaths` themselves (key: `applai_resume_{userId}`) so a reload restores the exact same tree state.
 
 ### Form State
 * **Tool:** React Hook Form + Zod
@@ -397,6 +470,7 @@ frame-src https://newassets.hcaptcha.com;
 | 2026-08-15 | EXIT / LOGOUT / CANCEL instead of single Logout button | Clear separation of concerns: terminate app vs clear session vs reset state | Single Logout button: ambiguous behavior, violates BOUNDARIES.md destructive action clarity |
 | 2026-08-15 | S002S1 Settings Panel | Centralized filename preferences | Scattered defaults: error-prone, poor UX |
 | 2026-08-17 | Supabase BaaS for Auth + Storage | Direct Auth/Storage SDK calls under RLS remove the custom backend and GIST proxy requirement (ADR-017) | Custom ASP.NET backend: unnecessary for current MVP; service-role function only if a future privileged feature requires it |
+| 2026-08-17 | `SuperCVDocument` replaces generic `MasterCVNode` tree; TVC01 selection reuses the schema's own `hidden` fields (ADR-018) | The real master-file format is a Reactive Resume export with named sections/items, not a generic tree; reusing its native `hidden` flag avoids inventing a parallel selection store that could drift out of sync | A fully generic recursive tree with no schema awareness: rejected — cannot render meaningful item labels or a stable field-detail view without per-section knowledge |
 | 2026-08-15 / 2026-08-17 | S002D2 Import Dialog | Explicit SuperCV file selection from fixed `Applai/SuperCV` vs implicit auto-load | Auto-load without user confirmation: error-prone; URL entry removed by ADR-017 |
 | 2026-08-15 / 2026-08-17 | Client-side LOGOUT only (no provider call) | Simplicity + speed. Supabase session expiry is provider-managed; `signOut()` is reserved for an explicit future revocation decision. | Provider logout: adds latency and changes ADR-014's local-clear model |
 | 2026-08-15 | AbortController for all requests | Enables instant cancellation for EXIT/LOGOUT/CANCEL without waiting for pending transactions | Axios cancel tokens: requires extra dependency (Axios is forbidden by BOUNDARIES.md) |

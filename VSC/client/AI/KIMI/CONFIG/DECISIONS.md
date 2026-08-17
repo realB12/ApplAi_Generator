@@ -5,6 +5,30 @@
 > **Compliance pass (2026-08-17):** This revision reconciles DECISIONS.md with TECH.md v1.0.3 / SPEC.md v1.0.3. All "[FILL IN]" placeholders removed. ADR-007 ("No Custom Backend in MVP") contradicted TECH.md's ASP.NET Core 9 backend and has been marked **Superseded by ADR-011**. Nine ADRs (ADR-008 – ADR-016) were added to cover decisions that existed only in TECH.md §14's Decision Log and had no corresponding ADR. See BOUNDARIES.md §8 — this file may not be changed by AI without explicit approval going forward.
 >
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. ADR-017 supersedes ADR-011 while preserving its historical record; see inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+>
+> **Reactive Resume schema-mapping pass (2026-08-17):** This revision adds ADR-018, which replaces the generic, app-invented `MasterCVNode` tree with the actual Reactive Resume export schema (`SuperCVDocument`, TECH.md §5/§5a), confirmed against the real sample file at `VSC/data/SuperCV/supercv.json`. ADR-008 (Custom TreeView) is amended, not superseded, since the decision to build a custom component still stands — only what that component renders has changed.
+
+---
+
+## ADR-018: SuperCV Document Model Replaces Generic MasterCVNode Tree
+
+**Status:** Accepted
+**Date:** 2026-08-17
+**Context:** VISION.md/SPEC.md/TECH.md assumed TVC01 would render a generic, app-invented recursive tree (`MasterCVNode`: `id/label/selected/expanded/info/children`) with its own `selected` flag. The real master-file sample added to the repo (`VSC/data/SuperCV/supercv.json`) is instead an actual [Reactive Resume](https://rxresu.me/) export: a named-section document (`{ picture, basics, summary, sections: { profiles, experience, education, ... }, customSections, metadata }`) where every section wrapper and every item inside it already carries its own `hidden: boolean`. The generic tree had no relationship to this real shape and no plan for mapping one onto the other. Per-topic item shapes differ (experience ≠ skills ≠ languages), but are internally consistent within one topic, and the content may range from completely empty to every section fully populated.
+
+**Decision:** Drop `MasterCVNode` entirely. TVC01 renders the parsed `SuperCVDocument` (TECH.md §5) directly — there is no separate, app-invented tree copy. Checkbox selection reuses the schema's own `hidden` field, toggled in place at exactly two levels: Topic (`sections.<key>.hidden`) and Item (`sections.<key>.items[i].hidden`) — the only two levels Reactive Resume itself can express visibility at. A small, presentation-only Section Registry (TECH.md §5a) supplies friendly labels/title-fields for the twelve known section keys, with a generic fallback for `customSections` and any future/unknown key, so the tree degrades gracefully instead of breaking on unexpected shapes. `basics`, `picture`, and `metadata` are excluded from the selectable tree entirely, since none of them carry a `hidden` flag, and are always copied through unchanged. Expand/collapse state has no schema equivalent and stays purely client-side (`expandedPaths`, TECH.md §8), never written into the document.
+
+**Consequences:**
+- ✅ No parallel selection store to keep in sync with the loaded document — the checkbox IS the schema's own field
+- ✅ The exported `myGeneratedCV.json` stays genuinely Reactive-Resume-shaped and valid, not a lossy flattened tree — useful groundwork for the deferred Resume.md/CoverLetter.md generation goal (VISION.md §1), which can potentially reuse Reactive Resume's own rendering pipeline (the repo already has `supercv.pdf/.docx/.md` proving that pipeline works on this schema)
+- ✅ New/custom sections degrade gracefully (generic fallback label) instead of crashing, satisfying the "content may range from nothing to full-blown" and "topics are complete but per-topic shape differs" constraints
+- ❌ Checkbox granularity is capped at the Item level — an item's individual fields (e.g. one Experience entry's `description`) cannot be independently included/excluded, only edited or dropped as a whole with the rest of that item, because the schema has no field-level `hidden` flag to back a finer-grained checkbox
+- ❌ On first import, every `hidden` flag is force-reset to `false`, discarding whatever visibility choices existed in the master file — acceptable because those reflect a *previous* job's curation, not this new one (SPEC.md §3.5.5)
+
+**Alternatives considered:**
+- Keep the generic `MasterCVNode` tree and write a bidirectional transform to/from the real schema: rejected — doubles the data model surface, and every transform bug risks silently corrupting content on export; reusing the schema's own `hidden` field directly is strictly simpler
+- A fully generic recursive JSON-tree walker with no section-specific knowledge at all (no registry): rejected — would produce unreadable item labels (e.g. raw field dumps instead of "Position at Company, Period") without any topic awareness; the registry is deliberately kept presentation-only so it never becomes a structural dependency
+- Field-level checkboxes (selecting individual fields within an item): rejected for this MVP — the schema cannot represent that state (no per-field `hidden`), and it doesn't match how Reactive Resume itself, or any consumer of the exported file, would interpret the document
 
 ---
 
@@ -227,6 +251,10 @@
 
 **Alternatives considered:**
 - react-arborist: rejected — extra dependency requiring BOUNDARIES.md approval; `@tanstack/react-virtual` already covers the virtualization need without it
+
+**Amendment (2026-08-17):** ADR-018 changes what this component renders (the real `SuperCVDocument`/Section Registry, not a generic `MasterCVNode` tree) but not the decision to build it as a custom component — that rationale (full control over selection/collapse/edit semantics a generic library wouldn't support) applies equally, and more so, now that selection must map onto Reactive Resume's own `hidden` field rather than a generic flag.
+
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — this ADR's Context/Decision referenced a generic tree of "nodes." NEW — see ADR-018 for the schema-aware replacement; the custom-component decision itself is unchanged.
 
 ---
 

@@ -3,6 +3,8 @@
 > **Purpose:** The working memory of the project. Updated after every coding session.
 > **Update frequency:** After every session — this is your continuity lifeline.
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+>
+> **Reactive Resume schema-mapping pass (2026-08-17):** TECH.md, SPEC.md, and PATTERNS.md were updated to replace the generic `MasterCVNode` tree with the real Reactive Resume `SuperCVDocument` schema (DECISIONS.md ADR-018) confirmed against `VSC/data/SuperCV/supercv.json`. `src/` still needs to be migrated to match (see Next Steps).
 
 ---
 
@@ -65,7 +67,7 @@
 
 ## Next Steps (Priority Order)
 
-1. [ ] **Update remaining source code (`src/`) to match the new context docs:** replace custom auth/GIST APIs with the Supabase client, direct Storage operations in `Applai/SuperCV`, and the in-memory Supabase session adapter.
+1. [ ] **Update remaining source code (`src/`) to match the new context docs:** replace custom auth/GIST APIs with the Supabase client, direct Storage operations in `Applai/SuperCV`, and the in-memory Supabase session adapter. This now also includes the `SuperCVDocument`/Section Registry data model (ADR-018) — there is no `MasterCVNode`/`TreeNode` to build against anymore.
 2. [ ] Configure Supabase Auth, bucket `Applai`, folder/path `SuperCV`, and authenticated-user RLS policies; never use the service role key in the browser.
 3. [ ] Decide and implement RLS-scoped user-settings persistence (recommended: Supabase table) for `masterResumeFile` and `preferredCvName`.
 4. [ ] Write unit/component tests for TVC01 selection/virtualization and the Supabase login form (TECH.md §10).
@@ -86,6 +88,7 @@
 
 | Date | Focus | Key Commits | Blockers Resolved |
 |------|-------|--------------|--------------------|
+| 2026-08-17 | Mapped the real SuperCV schema (Reactive Resume) onto TVC01 | `90577e3`+ (documentation pass) | Replaced the generic `MasterCVNode` tree with `SuperCVDocument` + Section Registry in TECH/SPEC/PATTERNS; ADR-018 established; selection now reuses the schema's own `hidden` field. |
 | 2026-08-17 | Migrated CONFIG docs to Supabase Auth + Storage | *(documentation pass; pending commit)* | Replaced obsolete GIST/custom-backend architecture in all seven context documents; ADR-017 established. |
 | 2026-08-17 | Reconciled DECISIONS.md/PATTERNS.md with SPEC.md/TECH.md | `046593f` | ADR-007/backend contradiction, PATTERNS.md LOGOUT server-call bug, missing EXIT/CANCEL/Import/Settings patterns. |
 | 2026-08-17 | Vibecoded Phases 1–5 on the existing scaffold | `ff3ce1a` | src/SRC case-sensitivity bug, missing shadcn/ui primitives, missing AbortController wiring, non-global SMSG, missing gistUrl param, no ESLint config. |

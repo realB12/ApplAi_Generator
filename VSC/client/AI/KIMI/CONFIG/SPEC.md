@@ -241,42 +241,52 @@
 | Header Title | `s002-header-title` | Span | "Applai Resume Generator" |
 | Exit Button | `s002-exit` | Button | "EXIT" | Closes the entire application immediately after confirmation. No pending transactions are waited for. Also available in S001. |
 | Logout Button | `s002-logout` | Button | "LOGOUT" | Returns to S000 Welcome Screen / S001 Login Popup after confirmation. Clears JWT from memory. No pending transactions are waited for. User must login again or exit. |
-| Cancel Button | `s002-cancel` | Button | "CANCEL" | Cancels running transactions (stops spinner, aborts in-flight requests) after confirmation. If no transactions are running, resets all TVC01 nodes to `selected: true` and discards any text modifications. |
+| Cancel Button | `s002-cancel` | Button | "CANCEL" | Cancels running transactions (stops spinner, aborts in-flight requests) after confirmation. If no transactions are running, resets every section's and item's `hidden` flag in the loaded SuperCV document to `false` and discards any text modifications. |
 | Load from SuperCV Button | `s002-load-supercv` | Button | "Load from SuperCV" | Triggers import flow. If TVC01 already contains data, SMSG `type: warning` prompts: *"Loading a new SuperCV master file will replace current data. Continue?"* — user must confirm before S002D2 opens. |
-| Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, deselected nodes (and children) are hidden. When ON, all nodes visible regardless of selection state. |
+| Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, any section/item whose `hidden` is `true` (and its children) is not shown. When ON, every section/item is shown regardless of its own `hidden` value; checkboxes remain interactive. |
 | Export Button | `s002-export` | Button | "Export" | Opens S002D1 Export Dialogue PopUp. |
 | Settings Button | `s002-settings` | Button | "Settings" | Opens S002S1 Settings Panel PopUp. |
 | TreeView Container | `s002-tvc01-container` | Div | Mount point for TVC01 component. |
 
 #### 3.3.3 TVC01 — TreeView Component
 
-**Purpose:** Display loaded SuperCV.json content as selectable, collapsible, editable nodes.
+**Purpose:** Display the loaded SuperCV document as a schema-aware, collapsible, selectable, editable tree, without assuming a fixed shape — a SuperCV file may contain anything from nothing to every possible section fully populated (TECH.md §5/§5a).
+
+> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — TVC01 rendered a generic, app-invented `MasterCVNode[]` tree with its own `selected`/`expanded` flags. NEW — TVC01 renders the *actual* SuperCV document directly. Every Reactive Resume section wrapper (`sections.<key>`) and every item inside it already carries its own `hidden: boolean` (confirmed in the real sample data, e.g. `sections.experience.items[i].hidden`); the checkbox toggles that existing field in place instead of a separate app-invented selection flag. See TECH.md §5/§5a and DECISIONS.md ADR-018.
+
+**Node granularity (only two checkable levels — matches what Reactive Resume itself can express):**
+- **Topic row** (one per key present in `sections`, plus one per entry in `customSections`): checkbox bound to `sections.<key>.hidden`.
+- **Item row** (one per `sections.<key>.items[i]`): checkbox bound to that item's own `hidden`.
+- **Field detail** (an item's own fields, e.g. `description`, `keywords`, `roles`, `website`): shown only when the item row is expanded, editable in place, but **never independently checkable** — Reactive Resume has no field-level `hidden` flag to back a checkbox at that depth. This is the maximum depth TVC01 needs to support.
+- **Not part of the tree at all:** `basics`, `picture`, and `metadata`. None of these carry a `hidden` flag in the schema, so there is nothing sensible to select/deselect — they are always shown read-only (or not shown) and always carried through unchanged on export.
 
 **Behavior:**
-- **Selection:** All tree-nodes have a checkbox. Checked = selected, unchecked = deselected. Clicking the checkbox toggles selection state.
-- **Collapse/Expand:** Double-clicking any node row toggles collapse/expand state of its children.
-- **Display:** When `s002-display-all` is OFF, deselected nodes and their child nodes are hidden from view. When ON, all nodes are visible regardless of selection.
-- **Editing:** Each node has an editable info-field associated with JSON entries.
-- **Visual Structure:** Tree indentation indicates hierarchy. Selected state persists per node.
+- **Selection:** Checked = `hidden: false`, unchecked = `hidden: true`, mutated directly on the live document at the row's exact path (e.g. `sections.experience.items[2].hidden`). There is no separate, out-of-band selection store to keep in sync.
+- **Collapse/Expand:** Double-clicking a Topic or Item row toggles its expand state. Expand/collapse has no Reactive Resume equivalent, so it lives only in client-side `expandedPaths` state (TECH.md §8) — it is never written into the document and never affects export.
+- **Display:** When `s002-display-all` is OFF, rows whose `hidden` is `true` (and their children) are hidden from view. When ON, all rows are visible regardless of `hidden`.
+- **Editing:** Expanding an Item row reveals its own content fields (chosen by the Section Registry for known topics, or a generic fallback for unknown/custom ones — TECH.md §5a) as editable inputs bound directly to that item's path in the live document.
+- **Row labelling:** A Topic row's label is the Section Registry's `displayName` (or a title-cased fallback of the raw key for unknown/custom sections). An Item row's label concatenates the registry's `titleFields` for that topic (e.g. Experience → `position, company, period`); if a listed field is absent on a given item, it is simply skipped rather than showing an error.
+- **Visual Structure:** Tree indentation indicates hierarchy (Topic → Item). `hidden` state persists per section/item exactly as loaded/edited, directly in the document.
 
-**Example Structure:**
+**Example Structure (using the real sample data's shape):**
 ```plaintext
-[x] Experiences
- |   +-[x] "2002-2004" "Company01" "My First Job" 
- |   | "Detailed JobDescripton for Job01 on several lines" 
- |   +-[ ] "2004-2009" "Company02" "My Second Job" 
- |      "Detailed JobDescripton for Job02 on several lines" 
+[x] Experience
+ |   +-[x] "Technical Advisor & Content Creator" · "AiAdvantage" · "since Dec 2024"
+ |   |     description: "Advising the core team on building the AIA online platform..." (editable)
+ |   +-[ ] "Head AI Strategy Implementation" · "Company02" · "2019–2024"
+ |         description: "..." (editable)
 [x] Skills
-     +-[x] "VibeCoding" *****
-     +-[ ] "C#" *****
+     +-[x] "VibeCoding"
+     |     keywords: Cursor, Replit, Lovable, Prompting, MCP, Antigravity, ChatGPT, Perplexity (editable)
+     +-[ ] "C#"
 ```
 
 #### 3.3.4 [Display All] Button
 
 | State | Behavior |
 |-------|----------|
-| **OFF (default)** | TVC01 hides all deselected nodes and their children. Only selected nodes and their selected ancestors are visible. |
-| **ON** | TVC01 displays all nodes regardless of selection state. Checkboxes remain interactive. |
+| **OFF (default)** | TVC01 hides every section/item whose `hidden` is `true`, along with their children. Only rows with `hidden: false` and their visible ancestors are shown. |
+| **ON** | TVC01 displays every section/item regardless of its `hidden` value. Checkboxes remain interactive. |
 
 **Toggle Visual:** Sliding toggle or button with clear ON/OFF state indicator.
 
@@ -287,8 +297,9 @@
 **Action:** Open S002D1 Export Dialogue PopUp.
 
 **Backend Logic (post-dialogue):**
-- Generate a JSON file containing only selected nodes and branches from the current TVC01 state.
-- The exported file has the same structure as SuperCV.json but is a subset (deselected nodes excluded).
+- Deep-clone the currently loaded SuperCV document. Physically remove every item whose `hidden === true` from its parent `items` array, then remove any section that is itself `hidden === true` or whose `items` array is now empty. Do the same for `customSections` entries.
+- Copy `basics`, `picture`, and `metadata` through completely unchanged — they were never part of the selectable tree, so they are never touched or excluded.
+- The exported file remains a valid, schema-conformant Reactive Resume document — the same overall structure as the loaded SuperCV.json, just trimmed to the selected subset (deselected sections/items excluded, not merely flagged).
 - Save to Supabase Storage bucket `Applai`, folder `SuperCV`, with the filename determined in S002D1.
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — the main action loaded/saved through a GIST proxy. NEW — `s002-load-supercv` opens a fixed-folder picker and export writes directly to `Applai/SuperCV`.
@@ -418,13 +429,13 @@
 | Supabase service error | `error` | "Storage error while loading SuperCV. Please try again later." |
 
 #### 3.5.5 Post-Import Behavior
-- On successful import: TVC01 is populated with the loaded `MasterCVNode[]`.
-- All nodes default to **selected = true** on first import.
+- On successful import: TVC01 renders directly from the parsed SuperCV document (TECH.md §5) — no separate tree copy is built.
+- **Every section's and item's own `hidden` flag is forced to `false` on first import**, overriding whatever the master file's `hidden` values were — those reflect a previous job's choices, not this new one. This is the SuperCV-schema equivalent of "all nodes default to selected = true."
 - The selected filename is saved to the session cache (Zustand `resume` slice) for future pre-fill.
 - The fixed Storage location remains `Applai/SuperCV`; it is not stored as user preference.
 
 #### 3.5.6 Auto-Open on S002 Mount
-- When S002 mounts and `masterCV` is `null` (no data loaded), automatically open S002D2 after a 500ms delay (to allow S002 render to complete).
+- When S002 mounts and `superCV` is `null` (no data loaded), automatically open S002D2 after a 500ms delay (to allow S002 render to complete).
 - If the user cancels S002D2 without importing, TVC01 remains empty and a persistent SMSG `type: info` shows: *"No SuperCV master file loaded. Click 'Load from SuperCV' to import."*
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — S002D2 collected and validated a GIST URL, then used `/api/gist/load`. NEW — it has no URL field and lists/downloads a selected JSON file directly from fixed `Applai/SuperCV` Storage.
@@ -437,7 +448,7 @@
    - Read `supabase.auth.getSession()` and maintain state with `supabase.auth.onAuthStateChange()`. `getSession()` does not return HTTP-style status codes — it resolves to `{ data: { session: null } }` (or an `AuthApiError`) rather than a 401/403.
    - If no valid session is present (session is `null`, `getSession()` errors, or `onAuthStateChange` fires a `SIGNED_OUT`/`TOKEN_REFRESHED`-failure event), show SMSG `type: error` → *"Session expired"* → redirect to S000.
    - TVC01 initializes empty. If no cached SuperCV master file exists, auto-open S002D2 after 500ms.
-   - If a cached SuperCV master file exists (from previous session), load it into TVC01 and restore last selection state.
+   - If a cached SuperCV master file exists (from previous session), load it into TVC01 and restore its last-saved `hidden`/expand state as-is (do not re-force `hidden` to `false` on a cache restore — only on a fresh S002D2 import per §3.5.5).
 
 2. **Load from SuperCV:**
    - If TVC01 contains data, show confirmation SMSG `type: warning`: *"Loading a new SuperCV master file will replace current data. Continue?"*
@@ -464,7 +475,7 @@
 5. **CANCEL:**
    - **Trigger:** Click `s002-cancel`.
    - **Case A — Transactions running:** If any API call is in flight (import, export, settings save, Supabase reachability/session check), show confirmation SMSG `type: warning`, persistent: *"Cancel running transactions? All pending operations will be aborted."* — on confirm, abort all `AbortController` signals, stop all spinners, return to idle S002 state.
-   - **Case B — No transactions running:** If TVC01 has been modified (nodes deselected or text edited), show confirmation SMSG `type: warning`, persistent: *"Discard all modifications and reset all nodes to selected?"* — on confirm, reset all nodes in TVC01 to `selected: true`, revert all text edits to last loaded state, clear modification dirty flag. On cancel, return to S002 with modifications preserved.
+   - **Case B — No transactions running:** If TVC01 has been modified (any section/item `hidden` toggled to `true`, or any field text edited), show confirmation SMSG `type: warning`, persistent: *"Discard all modifications and reset all nodes to selected?"* — on confirm, reset every section's and item's `hidden` flag to `false`, revert all field edits to the last-loaded document, clear the modification dirty flag. On cancel, return to S002 with modifications preserved.
    - **Case C — No modifications:** If no transactions and no modifications, show SMSG `type: info`: *"Nothing to cancel."* (auto-dismiss after 3s).
    - **Rule:** CANCEL is a "soft reset" — it never navigates away from S002.
 
