@@ -1,7 +1,10 @@
 # ApplaiGenerator SERVER Code
 
-The "server" represents the ApplaiGenerator's Backend-End that is called by the [ApplaiGenerator CLIENT](../client/_ApplaiGenerator%20CLIENT%20Code.md). 
+This folder remains as a reminder, that in an earlier design a dedicated backend-server was foreseen for authentication and file-management. This is no longer the case when wie have switched from GISTs to SupaBask Baskets. 
 
-Developmentweise the Client already includes a minimal backend-server for rapid prototyping and testing. 
+The "server" represents the Applai Generator's Backend-End which - in a future release might be called by the [ApplaiGenerator CLIENT](../client/_ApplaiGenerator%20CLIENT%20Code.md). 
 
-But in a next phase this pragmatic test-server will be replaced by this dedicated, full blown and maintained Backend-Server for better scalability, more security and better maintenance following best practices for large scale systems. 
+However, the current Client does authentication and JSON-file handling against privately setupo SupaBase Buckets that can be fully accessed directly from clients without a need for a dedicated Backend Server. 
+
+However, in a next phase this pragmatic test-server moight be replaced by a dedicated, full blown and maintained Backend-Server for better scalability, more security and better maintenance following best practices for large scale systems. 
+
