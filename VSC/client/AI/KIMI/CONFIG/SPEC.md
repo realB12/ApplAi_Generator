@@ -14,7 +14,7 @@
 | Layer | Requirement |
 |-------|-------------|
 | **Transport** | HTTPS/TLS 1.3 mandatory. HSTS header with `max-age=31536000; includeSubDomains; preload`. |
-| **Session** | Supabase Auth access + refresh session. Configure `supabase-js` with a custom in-memory storage adapter (or approved `sessionStorage`) to preserve ADR-009 intent; do not accept the default localStorage persistence unreviewed. |
+| **Session** | Supabase Auth access + refresh session. Configure `supabase-js` with a custom in-memory storage adapter by default, switching to `sessionStorage` only when the user checks "Remember me" (§3.2.2); never accept the default `localStorage` persistence. See ADR-009 amendment. |
 | **Passwords** | Delegated to Supabase Auth; password hashing and credential verification are not implemented by this app. Client-side minimum/format messaging remains UX validation only. |
 | **Rate Limiting** | Delegated to Supabase Auth auth endpoints. Configure Supabase project limits/CAPTCHA to match the existing 3-failure CAPTCHA and 5-failure/15-min lockout UX where required; enforcement is never custom client code. |
 | **CSRF** | Direct Supabase Auth/Storage requests use the authenticated session JWT and Storage RLS; preserve CSRF protection only for any future cookie-backed endpoint. |
@@ -110,7 +110,7 @@
    - If Supabase is reachable → hide spinner and fade in S001 when no session exists.
    - If initialization/reachability fails → hide spinner and show SMSG with `type: error`, message: *"Authentication service is unavailable. Please try again later."* CTA button: **"Retry"** (retries initialization).
 
-2. **Returning User Check (Parallel to Health Check):**
+2. **Returning User Check (Parallel to Reachability Check):**
    - Call `supabase.auth.getSession()` and register `supabase.auth.onAuthStateChange()`.
    - If a valid session exists → immediately route to S002 (bypass S001 entirely).
    - If no session exists → continue to S001 (normal flow).
@@ -172,7 +172,7 @@
 | Password Input | `s001-password` | Password | `placeholder="Enter your password"` | Required. Min 12 chars. Max 128 chars. |
 | Password Toggle | `s001-toggle-password` | Button | `aria-label="Show password"` | Icon: Eye (show) / EyeOff (hide). Toggles input `type`. |
 | Password Error | `s001-password-error` | Span | Inline error text | Hidden by default. Shows: *"Password must be at least 12 characters."* |
-| Remember Me | `s001-remember` | Checkbox | Label: "Remember me for 7 days" | Default: **unchecked**. If checked, refresh token TTL extends to 30 days. |
+| Remember Me | `s001-remember` | Checkbox | Label: "Remember me on this device" | Default: **unchecked**. Supabase's refresh-token lifetime is a project-wide GoTrue setting, not a per-login parameter — checking this box does **not** extend it. Instead it selects the client storage adapter (ADR-009 amendment): checked persists the session in `sessionStorage` (survives reload, cleared when the browser tab/window closes); unchecked keeps the in-memory-only adapter (cleared on any reload). |
 | Sign In Button | `s001-submit` | Button | "Sign In" | Primary style. Disabled state during API call. Shows spinner inside button during loading. |
 | Exit Button | `s001-exit` | Button | "EXIT" | Secondary style. Closes the entire application after confirmation. No pending transactions are waited for. |
 | Forgot Password | `s001-forgot` | Link | "Forgot password?" | Text link, accent color. Opens password reset flow (SMSG info: *"Check your email for reset instructions."*) |
@@ -206,7 +206,7 @@
 
 ### 3.3 S002 — Main Screen
 
-**Purpose:** Core application interface for managing and exporting resume data from a Supabase Storage-loaded MasterResume.JSON file. Only accessible post-authentication.
+**Purpose:** Core application interface for managing and exporting resume data from a Supabase Storage-loaded SuperCV.json file. Only accessible post-authentication.
 
 #### 3.3.1 Layout
 ```
@@ -242,7 +242,7 @@
 | Exit Button | `s002-exit` | Button | "EXIT" | Closes the entire application immediately after confirmation. No pending transactions are waited for. Also available in S001. |
 | Logout Button | `s002-logout` | Button | "LOGOUT" | Returns to S000 Welcome Screen / S001 Login Popup after confirmation. Clears JWT from memory. No pending transactions are waited for. User must login again or exit. |
 | Cancel Button | `s002-cancel` | Button | "CANCEL" | Cancels running transactions (stops spinner, aborts in-flight requests) after confirmation. If no transactions are running, resets all TVC01 nodes to `selected: true` and discards any text modifications. |
-| Load from SuperCV Button | `s002-load-supercv` | Button | "Load from SuperCV" | Triggers import flow. If TVC01 already contains data, SMSG `type: warning` prompts: *"Loading a new MasterResume will replace current data. Continue?"* — user must confirm before S002D2 opens. |
+| Load from SuperCV Button | `s002-load-supercv` | Button | "Load from SuperCV" | Triggers import flow. If TVC01 already contains data, SMSG `type: warning` prompts: *"Loading a new SuperCV master file will replace current data. Continue?"* — user must confirm before S002D2 opens. |
 | Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, deselected nodes (and children) are hidden. When ON, all nodes visible regardless of selection state. |
 | Export Button | `s002-export` | Button | "Export" | Opens S002D1 Export Dialogue PopUp. |
 | Settings Button | `s002-settings` | Button | "Settings" | Opens S002S1 Settings Panel PopUp. |
@@ -250,7 +250,7 @@
 
 #### 3.3.3 TVC01 — TreeView Component
 
-**Purpose:** Display loaded MasterResume.JSON content as selectable, collapsible, editable nodes.
+**Purpose:** Display loaded SuperCV.json content as selectable, collapsible, editable nodes.
 
 **Behavior:**
 - **Selection:** All tree-nodes have a checkbox. Checked = selected, unchecked = deselected. Clicking the checkbox toggles selection state.
@@ -288,7 +288,7 @@
 
 **Backend Logic (post-dialogue):**
 - Generate a JSON file containing only selected nodes and branches from the current TVC01 state.
-- The exported file has the same structure as MasterResume.JSON but is a subset (deselected nodes excluded).
+- The exported file has the same structure as SuperCV.json but is a subset (deselected nodes excluded).
 - Save to Supabase Storage bucket `Applai`, folder `SuperCV`, with the filename determined in S002D1.
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — the main action loaded/saved through a GIST proxy. NEW — `s002-load-supercv` opens a fixed-folder picker and export writes directly to `Applai/SuperCV`.
@@ -361,7 +361,7 @@
 
 ### 3.5 S002D2 — SuperCV Master File Import Dialogue PopUp
 
-**Purpose:** Let the user choose a MasterResume JSON file already present in fixed Supabase Storage bucket `Applai`, folder `SuperCV`. Triggered by `s002-load-supercv` on S002, or automatically on S002 mount when no MasterResume data is present. No Storage URL is entered.
+**Purpose:** Let the user choose a SuperCV JSON file already present in fixed Supabase Storage bucket `Applai`, folder `SuperCV`. Triggered by `s002-load-supercv` on S002, or automatically on S002 mount when no SuperCV data is present. No Storage URL is entered.
 
 **Container:** Modal popup consistent with SMSG design system (same overlay, card styling, shadows, animations).
 
@@ -373,8 +373,8 @@
 │    │ Import Master CV              │    │
 │    │ Choose a file from Applai /   │    │
 │    │ SuperCV                       │    │
-│    │ MasterResume File Name:       │    │
-│    │ [ MasterResume.json        ▼] │    │
+│    │ SuperCV File Name:            │    │
+│    │ [ SuperCV.json             ▼] │    │
 │    │ [ Cancel ] [ Import ]         │    │
 │    └───────────────────────────────┘    │
 └─────────────────────────────────────────┘
@@ -388,7 +388,7 @@
 | Title | `s002d2-title` | H3 | "Import Master CV" | — |
 | Prompt Message | `s002d2-prompt` | P | "Choose a file from Applai/SuperCV for import." | — |
 | SuperCV Folder Note | `s002d2-storage-path` | Text | "Supabase Storage: Applai/SuperCV" | Fixed, non-editable path; no URL field exists. |
-| Filename Label | `s002d2-filename-label` | Label | "MasterResume File Name" | — |
+| Filename Label | `s002d2-filename-label` | Label | "SuperCV File Name" | — |
 | Filename Picker | `s002d2-filename` | Select / combobox | `placeholder="Select a JSON file"` | Required. Values are `*.JSON` files listed from `supabase.storage.from('Applai').list('SuperCV')`; selected name must remain 3–60 chars and match `^[a-zA-Z0-9_.-]+$`. |
 | Filename Error | `s002d2-filename-error` | Span | Inline error | Hidden by default. Shows: *"Select a valid file from the SuperCV folder."* |
 | Cancel Button | `s002d2-cancel` | Button | "Cancel" | Secondary style. Closes popup immediately. Cancels the UI transaction; no side effects. |
@@ -412,8 +412,8 @@
 | SuperCV bucket/folder not accessible (RLS/network) | `error` | "SuperCV folder is not accessible. Please check your account and try again." |
 | No JSON files in SuperCV folder | `info` | "No SuperCV JSON files are available. Upload a master file to Applai/SuperCV outside the app, then try again." |
 | File not found in SuperCV folder | `error` | "[filename] was not found in the SuperCV folder." |
-| Invalid JSON parse | `error` | "Failed to parse MasterResume file. Invalid JSON format." |
-| Invalid JSON structure | `error` | "MasterResume file has an unexpected structure." |
+| Invalid JSON parse | `error` | "Failed to parse SuperCV master file. Invalid JSON format." |
+| Invalid JSON structure | `error` | "SuperCV master file has an unexpected structure." |
 | Network timeout | `warning` | "Connection timed out. Please try again." |
 | Supabase service error | `error` | "Storage error while loading SuperCV. Please try again later." |
 
@@ -425,7 +425,7 @@
 
 #### 3.5.6 Auto-Open on S002 Mount
 - When S002 mounts and `masterCV` is `null` (no data loaded), automatically open S002D2 after a 500ms delay (to allow S002 render to complete).
-- If the user cancels S002D2 without importing, TVC01 remains empty and a persistent SMSG `type: info` shows: *"No MasterResume loaded. Click 'Load from SuperCV' to import."*
+- If the user cancels S002D2 without importing, TVC01 remains empty and a persistent SMSG `type: info` shows: *"No SuperCV master file loaded. Click 'Load from SuperCV' to import."*
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — S002D2 collected and validated a GIST URL, then used `/api/gist/load`. NEW — it has no URL field and lists/downloads a selected JSON file directly from fixed `Applai/SuperCV` Storage.
 
@@ -434,17 +434,17 @@
 ### 3.6 S002 — Main Screen Behavior & Logic
 
 1. **On Mount:**
-   - Read `supabase.auth.getSession()` and maintain state with `supabase.auth.onAuthStateChange()`.
-   - If `401/403`, show SMSG `type: error` → *"Session expired"* → redirect to S000.
-   - TVC01 initializes empty. If no cached MasterResume exists, auto-open S002D2 after 500ms.
-   - If cached MasterResume exists (from previous session), load it into TVC01 and restore last selection state.
+   - Read `supabase.auth.getSession()` and maintain state with `supabase.auth.onAuthStateChange()`. `getSession()` does not return HTTP-style status codes — it resolves to `{ data: { session: null } }` (or an `AuthApiError`) rather than a 401/403.
+   - If no valid session is present (session is `null`, `getSession()` errors, or `onAuthStateChange` fires a `SIGNED_OUT`/`TOKEN_REFRESHED`-failure event), show SMSG `type: error` → *"Session expired"* → redirect to S000.
+   - TVC01 initializes empty. If no cached SuperCV master file exists, auto-open S002D2 after 500ms.
+   - If a cached SuperCV master file exists (from previous session), load it into TVC01 and restore last selection state.
 
 2. **Load from SuperCV:**
-   - If TVC01 contains data, show confirmation SMSG `type: warning`: *"Loading a new MasterResume will replace current data. Continue?"*
+   - If TVC01 contains data, show confirmation SMSG `type: warning`: *"Loading a new SuperCV master file will replace current data. Continue?"*
    - On confirm: open S002D2.
    - On cancel: return to S002, no changes.
-   - Loads selected `MasterResume.JSON` into TVC01 via S002D2 flow.
-   - On parse error, show SMSG `type: error`: *"Failed to load MasterResume file. Invalid JSON format."*
+   - Loads the selected `SuperCV.json` into TVC01 via S002D2 flow.
+   - On parse error, show SMSG `type: error`: *"Failed to load SuperCV master file. Invalid JSON format."*
 
 3. **EXIT:**
    - **Trigger:** Click `s002-exit` (or `s001-exit` from S001).
@@ -456,14 +456,14 @@
 4. **LOGOUT:**
    - **Trigger:** Click `s002-logout`.
    - Show confirmation SMSG `type: warning`, persistent: *"Are you sure you want to logout? Any unsaved changes will be lost."*
-   - On confirm: Immediately clear JWT from memory. **No pending transactions are waited for.** Abort all in-flight requests. Hard redirect to S000 (Welcome Screen). S001 Login Popup will be shown automatically when S000 health check passes.
+   - On confirm: Immediately clear the Supabase session from the client storage adapter. **No pending transactions are waited for.** Abort all in-flight requests. Hard redirect to S000 (Welcome Screen). S001 Login Popup will be shown automatically once S000's Supabase reachability/session-initialization check completes.
    - On cancel: Return to S002.
    - **Post-Logout:** User sees S000/S001 and must either login again or click [EXIT] to leave the app.
    - **Rule:** LOGOUT does NOT call `supabase.auth.signOut()` in this button flow. It is a client-side session clear only per ADR-014; Supabase session expiry/rotation remains server-managed.
 
 5. **CANCEL:**
    - **Trigger:** Click `s002-cancel`.
-   - **Case A — Transactions running:** If any API call is in flight (import, export, settings save, health check), show confirmation SMSG `type: warning`, persistent: *"Cancel running transactions? All pending operations will be aborted."* — on confirm, abort all `AbortController` signals, stop all spinners, return to idle S002 state.
+   - **Case A — Transactions running:** If any API call is in flight (import, export, settings save, Supabase reachability/session check), show confirmation SMSG `type: warning`, persistent: *"Cancel running transactions? All pending operations will be aborted."* — on confirm, abort all `AbortController` signals, stop all spinners, return to idle S002 state.
    - **Case B — No transactions running:** If TVC01 has been modified (nodes deselected or text edited), show confirmation SMSG `type: warning`, persistent: *"Discard all modifications and reset all nodes to selected?"* — on confirm, reset all nodes in TVC01 to `selected: true`, revert all text edits to last loaded state, clear modification dirty flag. On cancel, return to S002 with modifications preserved.
    - **Case C — No modifications:** If no transactions and no modifications, show SMSG `type: info`: *"Nothing to cancel."* (auto-dismiss after 3s).
    - **Rule:** CANCEL is a "soft reset" — it never navigates away from S002.
@@ -546,7 +546,7 @@ showMessage(params: ShowMessageParams): void;
 
 ### 3.8 S002S1 — Settings Panel PopUp
 
-**Purpose:** Allow authenticated users to manage two personal preferences: preferred MasterResume filename and preferred GeneratedCV base name. The Storage location is always fixed at `Applai/SuperCV`, so no `gistUrl` or other URL setting exists. Settings are persisted through the approved RLS-scoped user-settings mechanism and pre-fill S002D1/S002D2.
+**Purpose:** Allow authenticated users to manage two personal preferences: preferred SuperCV filename and preferred GeneratedCV base name. The Storage location is always fixed at `Applai/SuperCV`, so no `gistUrl` or other URL setting exists. Settings are persisted through the approved RLS-scoped user-settings mechanism and pre-fill S002D1/S002D2.
 
 **Container:** Modal popup consistent with SMSG design system (same overlay, card styling, shadows, animations).
 
@@ -556,8 +556,8 @@ showMessage(params: ShowMessageParams): void;
 │    ┌───────────────────────────────┐    │
 │    │ [S002S1] User Settings        │    │
 │    │ Storage: Applai / SuperCV     │    │
-│    │ Preferred MasterResume File   │    │
-│    │ [ MasterResume.json         ] │    │
+│    │ Preferred SuperCV File        │    │
+│    │ [ SuperCV.json              ] │    │
 │    │ Preferred CV Export Name      │    │
 │    │ [ GeneratedCV               ] │    │
 │    │ [ Cancel ] [ Save ]           │    │
@@ -572,9 +572,9 @@ showMessage(params: ShowMessageParams): void;
 | Screen Badge | `s002s1-badge` | Div | — | Fixed top-left of popup, text: `S002S1` |
 | Title | `s002s1-title` | H3 | "User Settings" | — |
 | Storage Path Note | `s002s1-storage-path` | Text | "Supabase Storage: Applai/SuperCV" | Fixed, non-editable. |
-| MasterResume Label | `s002s1-masterresume-label` | Label | "Preferred MasterResume File" | — |
-| MasterResume Input | `s002s1-masterresume` | Text | `placeholder="MasterResume.json"` | Optional. Max 60 chars. Regex: `^[a-zA-Z0-9_.-]+$`. Only letters, numbers, dots, hyphens, and underscores allowed. |
-| MasterResume Error | `s002s1-masterresume-error` | Span | Inline error | Hidden by default. Shows: *"Filename must be at most 60 characters. Only letters, numbers, dots, hyphens, and underscores allowed."* |
+| SuperCV File Label | `s002s1-masterresume-label` | Label | "Preferred SuperCV File" | — |
+| SuperCV File Input | `s002s1-masterresume` | Text | `placeholder="SuperCV.json"` | Optional. Max 60 chars. Regex: `^[a-zA-Z0-9_.-]+$`. Only letters, numbers, dots, hyphens, and underscores allowed. |
+| SuperCV File Error | `s002s1-masterresume-error` | Span | Inline error | Hidden by default. Shows: *"Filename must be at most 60 characters. Only letters, numbers, dots, hyphens, and underscores allowed."* |
 | CV Name Label | `s002s1-cvname-label` | Label | "Preferred CV Export Name" | — |
 | CV Name Input | `s002s1-cvname` | Text | `placeholder="GeneratedCV"` | Optional. Max 23 chars. Regex: `^[a-zA-Z0-9_-]{3,23}$`. Only letters, numbers, hyphens, and underscores allowed. |
 | CV Name Error | `s002s1-cvname-error` | Span | Inline error | Hidden by default. Shows: *"Name must be 3–23 characters. Only letters, numbers, hyphens, and underscores allowed."* |
@@ -586,7 +586,7 @@ showMessage(params: ShowMessageParams): void;
 | Event | Action |
 |-------|--------|
 | **Popup Open** | Read current RLS-scoped `UserSettings`; pre-fill both inputs (or empty when never set). Focus `s002s1-masterresume`; track dirty state per field. |
-| **MasterResume Blur** | Validate regex and length. This preference is used only to auto-pick a matching listed file from `Applai/SuperCV`; it never changes the Storage folder. |
+| **SuperCV File Blur** | Validate regex and length. This preference is used only to auto-pick a matching listed file from `Applai/SuperCV`; it never changes the Storage folder. |
 | **CV Name Blur** | Validate regex and length. |
 | **Save Click** | 1. Validate fields. 2. Disable button and show spinner. 3. Persist `{ masterResumeFile?, preferredCvName? }` through the approved RLS-scoped settings mechanism. 4. On success update Zustand `ui` state, close popup, and show success. 5. On failure show SMSG. |
 | **Cancel / Escape / Overlay Click** | Discard changes and return to S002; if dirty, show the required confirmation SMSG first. |
@@ -595,14 +595,14 @@ showMessage(params: ShowMessageParams): void;
 
 | Setting | Used By | Effect |
 |---------|---------|--------|
-| **Preferred MasterResume File** | S002D2 (Import) | Auto-selects the matching filename from the current `Applai/SuperCV` listing when it exists. |
+| **Preferred SuperCV File** | S002D2 (Import) | Auto-selects the matching filename from the current `Applai/SuperCV` listing when it exists. |
 | **Preferred CV Export Name** | S002D1 (Export) | Pre-fills `s002d1-name` instead of hardcoded `GeneratedCV`. |
 
 #### 3.8.5 Error Handling
 
 | Error | SMSG Type | Message |
 |-------|-----------|---------|
-| Invalid MasterResume filename | `error` | "Invalid MasterResume filename." |
+| Invalid SuperCV filename | `error` | "Invalid SuperCV filename." |
 | Invalid CV name | `error` | "Invalid CV export name." |
 | Settings save failed | `error` | "Failed to save settings. Please try again." |
 | Network timeout | `warning` | "Connection timed out. Please try again." |
@@ -635,7 +635,7 @@ flowchart TD
     LoginAPI -->|Success| S002
     LoginAPI -->|Invalid credentials| SMSG_Error2[SMSG: error<br/>Invalid credentials]
     LoginAPI -->|Rate limited| SMSG_Warn1[SMSG: warning<br/>Too many attempts]
-    S002 -->|No MasterResume cached| S002D2[S002D2: SuperCV Import Dialog]
+    S002 -->|No SuperCV cached| S002D2[S002D2: SuperCV Import Dialog]
     S002 -->|Click Load from SuperCV| ConfirmReplace{SMSG: warning<br/>Replace current data?}
     ConfirmReplace -->|Confirm| S002D2
     S002D2 -->|list + download Applai/SuperCV success| TVC01[TVC01: Populated]
@@ -662,13 +662,13 @@ flowchart TD
 
 | State | Description | Transitions |
 |-------|-------------|-------------|
-| `AUTH_CHECKING` | S000 mounted, health + token validation in flight | → `AUTHENTICATED` (valid token) / → `LOGIN_REQUIRED` (health OK, no token) / → `SERVICE_DOWN` (health fail) |
+| `AUTH_CHECKING` | S000 mounted, Supabase client initializing and `getSession()` in flight | → `AUTHENTICATED` (valid session) / → `LOGIN_REQUIRED` (Supabase reachable, no session) / → `SERVICE_DOWN` (initialization/reachability failure) |
 | `LOGIN_REQUIRED` | S001 visible, awaiting user input | → `AUTHENTICATING` (form submit) |
 | `AUTHENTICATING` | Login API in flight | → `AUTHENTICATED` (success) / → `LOGIN_ERROR` (failure) |
 | `LOGIN_ERROR` | Error displayed in SMSG, S001 still visible | → `LOGIN_REQUIRED` (dismiss) / → `AUTHENTICATING` (retry) |
 | `AUTHENTICATED` | Valid session, S002 visible | → `IMPORT_DIALOG` (no cached data) / → `RESUME_LOADED` (cached data) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` / → `SESSION_EXPIRED` |
 | `IMPORT_DIALOG` | S002D2 open, listing/awaiting SuperCV file selection | → `RESUME_LOADED` (import success) / → `EMPTY_STATE` (cancel) |
-| `RESUME_LOADED` | TVC01 populated with MasterResume data | → `EXPORT_DIALOG` / → `IMPORT_DIALOG` (load new) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` / → `SESSION_EXPIRED` |
+| `RESUME_LOADED` | TVC01 populated with SuperCV data | → `EXPORT_DIALOG` / → `IMPORT_DIALOG` (load new) / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` / → `SESSION_EXPIRED` |
 | `EXPORT_DIALOG` | S002D1 open, awaiting filename | → `RESUME_LOADED` (export success or cancel) |
 | `SETTINGS_PANEL` | S002S1 open, editing user settings | → `RESUME_LOADED` (save success or cancel) / → `EMPTY_STATE` |
 | `EMPTY_STATE` | S002 visible, TVC01 empty | → `IMPORT_DIALOG` / → `SETTINGS_PANEL` / → `LOGGING_OUT` / → `EXITING_APP` |
@@ -687,13 +687,13 @@ flowchart TD
 | Password too short | Inline error + red border | Correct input | None |
 | Wrong credentials | SMSG error popup | Re-enter | Supabase enforces rate limits; client may show configured CAPTCHA-after-3 UX |
 | Rate limited (429) | SMSG warning + form disabled | Wait 15 min | Supabase Auth enforcement |
-| Auth service down | SMSG error on S000 | Click Retry | Re-poll health |
+| Supabase unreachable at startup | SMSG error on S000 | Click Retry | Re-run Supabase client initialization / `getSession()` |
 | Network timeout | SMSG error | Click Retry | Exponential backoff (1s, 2s, 4s) |
 | Session expired during use | SMSG error, redirect to S000 | Re-login | Clear invalid tokens |
 | 5xx on any API call | SMSG error | Retry | Log server-side |
 | SuperCV bucket/folder not accessible | SMSG error | Retry after checking account/RLS | Supabase Storage returns access/network error |
 | SuperCV file not found | SMSG error | Choose another listed filename | Refresh Storage listing |
-| MasterResume JSON parse error | SMSG error | Check file content | None |
+| SuperCV JSON parse error | SMSG error | Check file content | None |
 | Export filename collision | Inline info (auto-suffix) | Accept or change | Auto-increment suffix |
 | Invalid settings filename | Inline error | Correct filename | None |
 | Settings save failed (5xx) | SMSG error | Retry | Log server-side |
@@ -719,8 +719,8 @@ flowchart TD
 - [ ] No sensitive data in URL parameters
 - [ ] Secure headers present on all responses
 - [ ] Session timeout warning at 2 minutes before expiry
-- [ ] Concurrent session limit (max 3 per user)
-- [ ] Audit log for all login attempts (success + failure)
+- [ ] Concurrent session limit (max 3 per user) is **deferred** — Supabase Auth has no native per-user concurrent-session cap; only implement if a future decision adds a server-side session registry (out of scope for this MVP)
+- [ ] No custom audit-log table is required for this MVP — Supabase Auth's built-in project logs (Dashboard → Logs) provide login-attempt visibility (success + failure)
 
 ---
 

@@ -57,20 +57,23 @@ export function ScreenBadge({ screenId }: { screenId: string }) {
 
 ## P02 — Authentication Flow Pattern
 
-> **UPDATED 2026-08-17 (Supabase migration):** OLD — `apiClient` posted to a custom auth API, refreshed custom cookies, and exposed custom login/validate/logout functions. NEW — a `supabase-js` singleton performs Auth directly; Supabase owns credential handling and session refresh while an in-memory adapter preserves ADR-009's XSS-resistance intent.
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `apiClient` posted to a custom auth API, refreshed custom cookies, and exposed custom login/validate/logout functions. NEW — a `supabase-js` singleton performs Auth directly; Supabase owns credential handling and session refresh while a Remember-Me-selected adapter preserves ADR-009's XSS-resistance intent.
 
 ### Supabase Client and Auth Zustand Store
 
 ```typescript
 // lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Deliberately memory-only. `supabase-js` defaults to localStorage, which would
-// contradict ADR-009. This adapter is cleared on reload; choose sessionStorage
-// only through an explicit security decision.
+// Memory-only by default. `supabase-js` defaults to localStorage, which would
+// contradict ADR-009. "Remember me" (SPEC.md §3.2.2) does NOT extend Supabase's
+// refresh-token TTL — that is a project-wide GoTrue setting, not a per-login
+// parameter. Instead it selects the adapter: sessionStorage when checked
+// (survives reload, cleared at tab/window close), memory-only when unchecked
+// (cleared on any reload). See ADR-009 Amendment 2 (2026-08-17).
 interface MemoryStorageAdapter {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -84,17 +87,34 @@ const memoryStorage: MemoryStorageAdapter = {
   removeItem: (key) => { memoryValues.delete(key); },
 };
 
-// ADR-014 local-only logout must clear the adapter too, otherwise getSession()
-// would restore the still-memory-resident session after the redirect.
-export function clearLocalSupabaseSession(): void { memoryValues.clear(); }
+const STORAGE_KEY = 'applai-supabase-auth';
 
-let client: ReturnType<typeof createClient> | undefined;
+// ADR-014 local-only logout must clear whichever adapter is active, otherwise
+// getSession() would restore the still-resident session after the redirect.
+export function clearLocalSupabaseSession(): void {
+  memoryValues.clear();
+  window.sessionStorage.removeItem(STORAGE_KEY);
+}
 
-export function getSupabaseClient(): ReturnType<typeof createClient> {
-  if (!client) {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Missing Supabase client configuration.');
+let client: SupabaseClient | undefined;
+let clientRememberMe: boolean | undefined;
+
+// Call with the S001 "Remember me" value at login time; calling again with a
+// DIFFERENT value recreates the client against the other adapter. Calling with
+// no argument (e.g. the S000 session-restore check) reuses the existing client
+// without changing its adapter.
+export function getSupabaseClient(rememberMe?: boolean): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Missing Supabase client configuration.');
+  const wantsRememberMe = rememberMe ?? clientRememberMe ?? false;
+  if (!client || (rememberMe !== undefined && rememberMe !== clientRememberMe)) {
+    clientRememberMe = wantsRememberMe;
     client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { storage: memoryStorage, persistSession: true, autoRefreshToken: true },
+      auth: {
+        storage: wantsRememberMe ? window.sessionStorage : memoryStorage,
+        storageKey: STORAGE_KEY,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
     });
   }
   return client;
@@ -130,10 +150,13 @@ import type { User } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/lib/supabase';
 
 export const authKeys = { session: ['supabase', 'session'] as const, user: ['supabase', 'user'] as const };
-export type LoginInput = { email: string; password: string; captchaToken?: string };
+export type LoginInput = { email: string; password: string; captchaToken?: string; rememberMe: boolean };
 
+// rememberMe selects the client storage adapter BEFORE authenticating (SPEC.md
+// §3.2.2 / ADR-009 Amendment 2) — it never touches Supabase's own refresh-token
+// TTL, which is a project-wide GoTrue setting, not a per-login parameter.
 export async function login(input: LoginInput): Promise<{ user: User; accessToken: string }> {
-  const { data, error } = await getSupabaseClient().auth.signInWithPassword({
+  const { data, error } = await getSupabaseClient(input.rememberMe).auth.signInWithPassword({
     email: input.email,
     password: input.password,
     options: input.captchaToken ? { captchaToken: input.captchaToken } : undefined,
@@ -342,7 +365,7 @@ export function LoginForm() {
 
         <div className="flex items-center space-x-2">
           <Checkbox id="s001-remember" {...register('rememberMe')} />
-          <Label htmlFor="s001-remember">Remember me for 7 days</Label>
+          <Label htmlFor="s001-remember">Remember me on this device</Label>
         </div>
 
         {captchaRequired && (
@@ -1218,13 +1241,13 @@ export function ImportDialog({ open, onOpenChange, defaultFilename = '' }: Impor
     reset({ filename: jsonNames.includes(defaultFilename) ? defaultFilename : jsonNames[0] ?? '' });
   }, [open, filesQuery.data, defaultFilename, reset]);
   const onSubmit = async ({ filename }: ImportFormData) => {
-    try { const nodes = await loadSuperCVFile(filename); setMasterCV(nodes); setStorageFilename(filename); onOpenChange(false); showSuccess(`MasterResume loaded: ${filename}`); }
+    try { const nodes = await loadSuperCVFile(filename); setMasterCV(nodes); setStorageFilename(filename); onOpenChange(false); showSuccess(`SuperCV file loaded: ${filename}`); }
     catch { showError('SuperCV folder or selected file is not accessible. Please try another file.'); }
   };
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-[420px]">
     <ScreenBadge screenId="S002D2" /><DialogHeader><DialogTitle id="s002d2-title">Import Master CV</DialogTitle>
     <DialogDescription id="s002d2-prompt">Choose a file from Supabase Storage: Applai/SuperCV.</DialogDescription></DialogHeader>
-    <form onSubmit={handleSubmit(onSubmit)} noValidate><Label htmlFor="s002d2-filename">MasterResume File Name</Label>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate><Label htmlFor="s002d2-filename">SuperCV File Name</Label>
       <select id="s002d2-filename" {...register('filename')} aria-invalid={errors.filename ? 'true' : 'false'}>
         <option value="">Select a JSON file</option>{filesQuery.data?.filter((f) => f.name.toLowerCase().endsWith('.json')).map((f) => <option key={f.path} value={f.name}>{f.name}</option>)}
       </select>{errors.filename && <span id="s002d2-filename-error">Select a valid file from the SuperCV folder.</span>}
@@ -1233,7 +1256,7 @@ export function ImportDialog({ open, onOpenChange, defaultFilename = '' }: Impor
 }
 ```
 
-**Auto-open on S002 mount (SPEC.md §3.5.6):** when `masterCV === null` after the 500ms mount delay, set `isImportOpen = true`; on cancellation show *"No MasterResume loaded. Click 'Load from SuperCV' to import."*
+**Auto-open on S002 mount (SPEC.md §3.5.6):** when `masterCV === null` after the 500ms mount delay, set `isImportOpen = true`; on cancellation show *"No SuperCV master file loaded. Click 'Load from SuperCV' to import."*
 
 ---
 

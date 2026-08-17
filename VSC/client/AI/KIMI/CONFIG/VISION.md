@@ -27,7 +27,7 @@ The core component displays the loaded JSON file in an editable, collapsible Tre
 
 3. Once a valid resume file is loaded, all data from the JSON file is displayed in the MainScreen TreeView with all boxes initially selected. The user can collapse/open branches, select/deselect tree nodes to activate specific skills or experiences, and edit loaded text for skills or experiences. [CANCEL] resets all nodes to selected and discards text modifications when no transaction is running.
 
-4. When the user clicks [EXPORT], the user supplies a name for the export JSON file such as `myGeneratedCV.json` (pre-filled from user settings if configured). When the name is valid, the popup closes and the app generates a subset of the loaded MasterResume JSON containing only selected TreeView nodes, then saves it into the SuperCV folder in Supabase Storage. Existing-name collisions use the established auto-suffix rules against the Storage object listing.
+4. When the user clicks [EXPORT], the user supplies a name for the export JSON file such as `myGeneratedCV.json` (pre-filled from user settings if configured). When the name is valid, the popup closes and the app generates a subset of the loaded SuperCV JSON containing only selected TreeView nodes, then saves it into the SuperCV folder in Supabase Storage. Existing-name collisions use the established auto-suffix rules against the Storage object listing.
 
 5. The app can be exited anytime when the [EXIT] button is clicked. EXIT closes the application immediately without waiting for pending transactions, after user confirmation.
 
@@ -42,9 +42,9 @@ The core component displays the loaded JSON file in an editable, collapsible Tre
 
 ## 4. Success Criteria (Definition of "Done")
 1. User can log in with valid Supabase Auth credentials.
-2. A valid MasterResume can be listed and loaded from Supabase Storage path `Applai/SuperCV`.
-3. The MasterResume is displayed in an editable TreeView.
-4. A copy of the MasterResume containing only selected TreeView nodes can be written to the `Applai/SuperCV` folder in Supabase Storage.
+2. A valid SuperCV master file can be listed and loaded from Supabase Storage path `Applai/SuperCV`.
+3. The SuperCV master file is displayed in an editable TreeView.
+4. A copy of the SuperCV master file containing only selected TreeView nodes can be written to the `Applai/SuperCV` folder in Supabase Storage.
 5. All functionality works in a mobile browser (smaller screen) too.
 
 ## 5. Non-Goals (What we explicitly do NOT do)
@@ -54,7 +54,7 @@ The core component displays the loaded JSON file in an editable, collapsible Tre
 * No in-app upload or creation of new SuperCV master files in this MVP; users upload those files outside the app. This is a future-stage feature.
 
 ## 6. Competitive Differentiation
-By using an efficient TreeView for selecting and editing a MasterResume JSON file, the user can efficiently compile a job-offer-specific, relevant resume from a complete SuperCV template reduced to what is relevant for the application.
+By using an efficient TreeView for selecting and editing a SuperCV JSON file, the user can efficiently compile a job-offer-specific, relevant resume from a complete SuperCV template reduced to what is relevant for the application.
 
 ## ChangeLog
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.

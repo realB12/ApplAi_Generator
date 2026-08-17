@@ -12,7 +12,7 @@
 
 **Status:** Accepted
 **Date:** 2026-08-17
-**Context:** The MVP needs email/password authentication plus authenticated read/write of MasterResume/SuperCV JSON files in fixed Supabase Storage path `Applai/SuperCV`. The former custom ASP.NET Core backend existed to keep a GitHub PAT out of the browser and to implement Argon2id hashing, JWT issuance, CAPTCHA, and rate limiting. Supabase Auth now manages passwords, access/refresh JWT issuance and rotation, and auth endpoint protections; Supabase Storage RLS authorizes the authenticated user's direct browser Storage calls. No GitHub PAT or similar secret is involved.
+**Context:** The MVP needs email/password authentication plus authenticated read/write of SuperCV JSON files in fixed Supabase Storage path `Applai/SuperCV`. The former custom ASP.NET Core backend existed to keep a GitHub PAT out of the browser and to implement Argon2id hashing, JWT issuance, CAPTCHA, and rate limiting. Supabase Auth now manages passwords, access/refresh JWT issuance and rotation, and auth endpoint protections; Supabase Storage RLS authorizes the authenticated user's direct browser Storage calls. No GitHub PAT or similar secret is involved.
 
 **Decision:** Use `@supabase/supabase-js` directly from the React SPA for `supabase.auth.signInWithPassword`, `getSession`, `onAuthStateChange`, `getUser`, and fixed-folder Storage `list`, `download`, and `upload` calls. Configure Storage RLS policies around the authenticated user's JWT. For the current MVP, do not deploy a custom ASP.NET Core API or any backend merely to proxy Auth/Storage calls.
 
@@ -37,7 +37,7 @@
 
 **Status:** Accepted
 **Date:** 2026-08-15 (amended 2026-08-17)
-**Context:** Users repeatedly choose a MasterResume filename and preferred export name across sessions (S002D1, S002D2). The Supabase Storage location is fixed at `Applai/SuperCV`, so users must not configure a storage URL.
+**Context:** Users repeatedly choose a SuperCV filename and preferred export name across sessions (S002D1, S002D2). The Supabase Storage location is fixed at `Applai/SuperCV`, so users must not configure a storage URL.
 
 **Decision:** Keep S002S1 as a Settings Panel that persists `{ masterResumeFile?, preferredCvName? }` through an RLS-scoped Supabase user-settings mechanism and caches it in the Zustand `ui` slice. `masterResumeFile` can auto-select a matching file from the current `Applai/SuperCV` listing; `preferredCvName` pre-fills S002D1. Do not include a `gistUrl` or any other storage-URL field.
 
@@ -204,7 +204,9 @@
 **Alternatives considered:**
 - `localStorage`/`sessionStorage` for JWT: rejected — vulnerable to XSS theft, violates SPEC.md §7 security checklist item "JWT stored in memory only"
 
-**Amendment (2026-08-17):** Supabase's browser client persists access and refresh tokens in `localStorage` by default, which conflicts with this ADR's intent. Create the client with a custom memory-only `Storage`-shaped adapter (or an explicitly approved sessionStorage adapter): `createClient(url, key, { auth: { persistSession: true, storage: <custom in-memory adapter> } })`. Keep the status Accepted; ADR-017 changes the provider, not the XSS-resistance goal.
+**Amendment (2026-08-17):** Supabase's browser client persists access and refresh tokens in `localStorage` by default, which conflicts with this ADR's intent. Create the client with a custom memory-only `Storage`-shaped adapter: `createClient(url, key, { auth: { persistSession: true, storage: <custom in-memory adapter> } })`. Keep the status Accepted; ADR-017 changes the provider, not the XSS-resistance goal.
+
+**Amendment 2 (2026-08-17):** Use the S001 "Remember me" checkbox (SPEC.md §3.2.2) to choose between the two available adapters at login time: `sessionStorage` when checked (persists the session until the browser tab/window closes), the memory-only adapter when unchecked (cleared on any page reload). This corrects an earlier SPEC.md draft that claimed "Remember me" extends Supabase's refresh-token TTL to 30 days — that TTL is a project-wide GoTrue setting, not a per-login parameter, so "Remember me" controls client-side session persistence only, never server-side token lifetime.
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — this ADR assumed an app-issued access JWT plus httpOnly refresh cookie. NEW — Supabase session tokens require an explicit custom browser storage adapter to preserve the memory-only intent.
 
@@ -214,7 +216,7 @@
 
 **Status:** Accepted
 **Date:** 2026-08-14
-**Context:** TVC01 must support checkbox selection, collapse/expand, inline text editing, and virtualization for large MasterResume trees (BOUNDARIES.md §3 performance limits; TECH.md §9 "TVC01 must virtualize lists > 100 nodes").
+**Context:** TVC01 must support checkbox selection, collapse/expand, inline text editing, and virtualization for large SuperCV trees (BOUNDARIES.md §3 performance limits; TECH.md §9 "TVC01 must virtualize lists > 100 nodes").
 
 **Decision:** Build TVC01 as a custom feature component in `features/resume/components/TreeView.tsx`, using `@tanstack/react-virtual` (already an approved dependency, TECH.md §1) for virtualization and shadcn/ui `Checkbox` for selection. No external tree-view library is introduced.
 

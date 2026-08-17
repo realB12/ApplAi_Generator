@@ -94,7 +94,7 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   |   └── styles/                # Global styles, Tailwind imports
 |   |   ├─ TESTS/                      # Testing stuff - not part of the product
 |   |   └─ xCODE/                      # Folder/File documentation
-|   └─ server                          # for the Applai_Generator's Backend/Server
+|   └─ server                          # for the Applai_Generator's Backend/Server  <!-- UPDATED 2026-08-17 (Supabase migration): optional/deferred for the current MVP per ADR-017 — no backend is required while Auth + Storage stay client-direct under Supabase RLS. Keep the folder reserved for a future minimal serverless function if a feature ever needs the Supabase service role key. -->
 ├─ .gitignore                          # exclude /PRODUCT
 ├─ LICENCE
 └─ README.md
@@ -226,7 +226,7 @@ interface SupabaseStorageFile {
 
 | Concern | Implementation |
 | ------- | -------------- |
-| Token Storage | Supabase access + refresh tokens are managed by `supabase-js`. To preserve ADR-009 intent, configure a custom in-memory `Storage` adapter (or explicitly approved `sessionStorage`) rather than accepting default `localStorage`; use `createClient(url, key, { auth: { persistSession: true, storage: memoryStorage } })`. |
+| Token Storage | Supabase access + refresh tokens are managed by `supabase-js`. To preserve ADR-009 intent, select the adapter based on the S001 "Remember me" checkbox (SPEC.md §3.2.2): `sessionStorage` when checked (session survives reload, cleared at tab/window close), a custom in-memory adapter when unchecked (cleared on any reload). Never accept the default `localStorage`. Neither adapter changes Supabase's own refresh-token TTL, which is a project-wide GoTrue setting, not a per-login parameter. |
 | Token TTL / Refresh | Delegated to Supabase Auth (access + refresh issuance and rotation). App observes `getSession()` and `onAuthStateChange()` rather than implementing a Fetch refresh interceptor. |
 | Password Hashing | Delegated to Supabase Auth. The app never receives, stores, or hashes passwords beyond passing credentials to `signInWithPassword`; client format guidance remains a UX validation only. |
 | Rate Limiting / CAPTCHA | Delegated to Supabase Auth auth-endpoint controls. If project CAPTCHA is enabled, obtain hCaptcha/Turnstile token and pass it as `captchaToken`; UI can retain 3-failure CAPTCHA and 5-failure/15-min messages when project settings match. |
@@ -302,7 +302,7 @@ export function abortAllRequests(): void {
 * Image optimization via CDN or vite-plugin-image-optimizer
 
 ### Per-Screen Performance Notes:
-* **S000:** Must render < 1.0s FCP. Health check fires immediately; no blocking resources.
+* **S000:** Must render < 1.0s FCP. Supabase client initialization / `getSession()` fires immediately; no blocking resources.
 * **S001:** Modal rendered over S000; no separate route load.
 * **S002:** TVC01 must virtualize lists > 100 nodes. Tree collapse/expand must be O(1) per node.
 
@@ -325,7 +325,7 @@ export function abortAllRequests(): void {
 
 | Screen / Component | Test Type | Critical Path |
 |--------------------|-----------|---------------|
-| S000 | E2E | Health check → spinner → S001 mount |
+| S000 | E2E | Supabase session check → spinner → S001 mount |
 | S001 | Component + E2E | Form validation, CAPTCHA trigger, login success/failure, EXIT confirmation |
 | S002 | E2E | Session validation, TVC01 render, EXIT/LOGOUT/CANCEL confirmations |
 | TVC01 | Component + Unit | Node selection, collapse/expand, displayAll toggle, text editing |
