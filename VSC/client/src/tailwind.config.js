@@ -1,0 +1,56 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ["class"],
+  content: [
+    "./index.html",
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./features/**/*.{ts,tsx}",
+    "./hooks/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+    "./main.tsx",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#0F172A',
+        accent: '#3B82F6',
+        success: '#10B981',
+        warning: '#F59E0B',
+        error: '#EF4444',
+        info: '#6366F1',
+        surface: '#FFFFFF',
+        bg: '#F8FAFC',
+        'text-primary': '#1E293B',
+        'text-secondary': '#64748B',
+        // shadcn/ui semantic tokens (CSS variables defined in styles/index.css)
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: 'hsl(var(--card))',
+        'card-foreground': 'hsl(var(--card-foreground))',
+        popover: 'hsl(var(--popover))',
+        'popover-foreground': 'hsl(var(--popover-foreground))',
+        muted: 'hsl(var(--muted))',
+        'muted-foreground': 'hsl(var(--muted-foreground))',
+        destructive: 'hsl(var(--destructive))',
+        'destructive-foreground': 'hsl(var(--destructive-foreground))',
+        secondary: '#F1F5F9',
+        'secondary-foreground': 'hsl(var(--secondary-foreground))',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['monospace'],
+      },
+      borderRadius: {
+        lg: '12px',
+        md: '8px',
+        sm: '4px',
+        full: '9999px',
+      },
+    },
+  },
+  plugins: [],
+};

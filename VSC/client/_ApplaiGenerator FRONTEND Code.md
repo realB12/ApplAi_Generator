@@ -7,7 +7,7 @@ Developmentwise the "client" includes a minimal backend-server as well: However 
 ## Project Structure
 
 ```plaintext
-ApplAI/40 DEV/S02_GENERATOR/VSC/SRC/client/
+ApplAI/40 DEV/S02_GENERATOR/VSC/src/client/
 ├── src/
 │   ├── components/
 │   ├── features/
