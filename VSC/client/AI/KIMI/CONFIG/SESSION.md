@@ -67,11 +67,14 @@
 
 ## Blockers & Open Questions
 
-1. The Supabase project itself must still be configured: create the `Applai` bucket / `SuperCV` folder, define Storage RLS policies scoping objects to the authenticated user, create the `user_settings` table (columns `user_id`, `master_resume_file`, `preferred_cv_name`) with RLS, and supply `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` — the `src/` code side of this is done, but nothing has been tested against a live Supabase project yet.
-2. No `CHANGELOG.md` exists yet, though BOUNDARIES.md §8 references one.
-3. Decide whether to enable hCaptcha/Turnstile in Supabase Auth settings and retain optional `VITE_HCAPTCHA_SITEKEY`.
+1. **No Auth user account exists yet.** The app has no self-registration screen (S001 is login-only by design, SPEC.md §3.2), so the first account must be created out-of-band via the Supabase Dashboard (Authentication → Users → Add user) before S001 can be tested. `auth.users` is currently empty on the live project.
+2. Verify Supabase Auth project settings (Dashboard → Authentication → Settings) match SPEC.md §3.2.2's client-side password rule (min 12 chars) and decide on email-confirmation requirements for a single-user personal app.
+3. No `CHANGELOG.md` exists yet, though BOUNDARIES.md §8 references one.
+4. Decide whether to enable hCaptcha/Turnstile in Supabase Auth settings and retain optional `VITE_HCAPTCHA_SITEKEY`.
 
-**Resolved this session:** `src/` fully migrated to Supabase Auth/Storage + `SuperCVDocument` (see "What Was Done Last Session"); this closes the two source-migration blockers carried from the previous session.
+**Resolved this session (source):** `src/` fully migrated to Supabase Auth/Storage + `SuperCVDocument` (see "What Was Done Last Session"); this closes the two source-migration blockers carried from the previous session.
+
+**Resolved this session (infrastructure):** Live Supabase project `Applai Generator` (`tascuxigwgedjrztwemj`, region `eu-north-1`) configured via the Supabase MCP connector: created the `Applai` Storage bucket (private) with 4 RLS policies (select/insert/update/delete) scoped to authenticated users and the fixed `SuperCV/%` object-name prefix (SPEC.md §7 checklist's "approved shared policy" — this is a single-user personal app, not multi-tenant, so no per-user subfolder isolation was added); created `public.user_settings` (columns `user_id`, `master_resume_file`, `preferred_cv_name`, `updated_at`) with RLS scoping every row to `auth.uid() = user_id`. `get_advisors` (security) returned zero findings after both migrations. A pre-existing test bucket `Applai_Test01` was left untouched (not part of this app's config; flagged for the user to delete manually if unwanted). Project URL and anon/publishable key were retrieved and handed to the user for their local `.env.local` (never committed).
 
 **Resolved previous session:** Repo cleanliness — `VSC/client/` had parallel copies of the scaffold; the obsolete copies were removed and the canonical source folder was renamed `SRC/` → `src/`. Build/typecheck were re-verified at that time.
 
@@ -79,12 +82,13 @@
 
 ## Next Steps (Priority Order)
 
-1. [ ] Configure the Supabase project: Auth (email+password), bucket `Applai`, folder/path `SuperCV`, authenticated-user RLS policies, and the `user_settings` table; never use the service role key in the browser.
-2. [ ] Run the app end-to-end against that live Supabase project (login → import → select/edit → export) and fix anything the code-only typecheck/lint pass couldn't catch.
+1. [ ] Create the first Auth user account via Supabase Dashboard → Authentication → Users (no in-app sign-up screen exists by design).
+2. [ ] Set `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` in a local `.env.local` (values already retrieved this session — see chat) and run the app end-to-end (login → import a real `SuperCV.json` uploaded to `Applai/SuperCV` → select/edit → export) to catch anything the code-only typecheck/lint pass couldn't.
 3. [ ] Write unit/component tests for TVC01 selection/virtualization/field-editing and the Supabase login form (TECH.md §10).
 4. [ ] Add `CHANGELOG.md` and start logging entries per BOUNDARIES.md §8.
-5. [ ] Playwright E2E happy path (login → Storage import → select nodes → Storage export) once a test Supabase project is available.
+5. [ ] Playwright E2E happy path (login → Storage import → select nodes → Storage export) now that a live Supabase project is configured.
 6. [ ] Revisit the Resume Mapping topic the user flagged for a separate session (item field-detail editing UX, beyond the generic denylist-based inputs shipped this session).
+7. [ ] Decide whether to delete the leftover `Applai_Test01` Storage bucket (unused by the app).
 
 ---
 
