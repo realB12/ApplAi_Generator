@@ -1,12 +1,14 @@
 # PATTERNS.md :: Reusable Code Patterns for Applai Resume Generator
 
+> **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+
 * -> Use these patterns when implementing any feature from SPEC.md.
 * -> Never deviate from these patterns without updating this file.
 
 > **Compliance pass (2026-08-17):** Reconciled against SPEC.md v1.0.3 and TECH.md v1.0.3. Fixes applied:
 > 1. **P02/P09 LOGOUT bug removed** — the old `useLogout()`/`LogoutButton` pattern called `POST /api/auth/logout`, contradicting TECH.md §7 and SPEC.md §3.6.4 ("LOGOUT does NOT call the server") and DECISIONS.md ADR-014. Fixed to be client-side-only.
 > 2. **AbortController wiring added** to `lib/api.ts` per TECH.md §8 (`createRequestSignal`/`abortAllRequests`), referenced by DECISIONS.md ADR-012.
-> 3. **P06 GIST API fixed** — `listGistFiles()` and `loadGistFile()` were missing the required `gistUrl` query parameter mandated by TECH.md §6's API contract.
+> 3. **P06 GIST API fixed (historical)** — `listGistFiles()` and `loadGistFile()` were missing the required `gistUrl` query parameter mandated by TECH.md §6's API contract. *(This note describes the pre-Supabase GIST-era fix and is kept for history; P06 itself was fully replaced by the Supabase Storage API Pattern in the 2026-08-17 Supabase migration pass below.)*
 > 4. **New patterns added**: P13 EXIT Button, P14 CANCEL Button, P15 S002D2 Import Dialog, P16 S002S1 Settings Panel + `useSettings` hook — these screens/behaviors were fully specified in SPEC.md but had no corresponding pattern, leaving vibecoding without guidance.
 > 5. **P03 LoginForm extended** with the EXIT button, failed-attempt counter, hCaptcha trigger (after 3 fails), and 15-min lockout (after 5 fails) required by SPEC.md §3.2.3 and §1.
 
@@ -55,210 +57,164 @@ export function ScreenBadge({ screenId }: { screenId: string }) {
 
 ## P02 — Authentication Flow Pattern
 
-### Auth Zustand Store
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `apiClient` posted to a custom auth API, refreshed custom cookies, and exposed custom login/validate/logout functions. NEW — a `supabase-js` singleton performs Auth directly; Supabase owns credential handling and session refresh while an in-memory adapter preserves ADR-009's XSS-resistance intent.
+
+### Supabase Client and Auth Zustand Store
 
 ```typescript
+// lib/supabase.ts
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Deliberately memory-only. `supabase-js` defaults to localStorage, which would
+// contradict ADR-009. This adapter is cleared on reload; choose sessionStorage
+// only through an explicit security decision.
+interface MemoryStorageAdapter {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+
+const memoryValues = new Map<string, string>();
+const memoryStorage: MemoryStorageAdapter = {
+  getItem: (key) => memoryValues.get(key) ?? null,
+  setItem: (key, value) => { memoryValues.set(key, value); },
+  removeItem: (key) => { memoryValues.delete(key); },
+};
+
+// ADR-014 local-only logout must clear the adapter too, otherwise getSession()
+// would restore the still-memory-resident session after the redirect.
+export function clearLocalSupabaseSession(): void { memoryValues.clear(); }
+
+let client: ReturnType<typeof createClient> | undefined;
+
+export function getSupabaseClient(): ReturnType<typeof createClient> {
+  if (!client) {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('Missing Supabase client configuration.');
+    client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { storage: memoryStorage, persistSession: true, autoRefreshToken: true },
+    });
+  }
+  return client;
+}
+
 // features/auth/stores/authStore.ts
 import { create } from 'zustand';
-import { User } from '@/types';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User, accessToken: string) => void;
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
-  isLoading: true,
+  user: null, accessToken: null, isAuthenticated: false, isLoading: true,
   setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true, isLoading: false }),
   clearAuth: () => set({ user: null, accessToken: null, isAuthenticated: false, isLoading: false }),
   setLoading: (isLoading) => set({ isLoading }),
 }));
 ```
 
-### API Client with Interceptor
-
-```typescript
-// lib/api.ts
-import { useAuthStore } from '@/features/auth/stores/authStore';
-
-const API_BASE = import.meta.env.VITE_API_URL;
-
-export async function apiClient<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const { accessToken } = useAuthStore.getState();
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-    ...((options.headers as Record<string, string>) || {}),
-  };
-
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include', // httpOnly cookies
-  });
-
-  if (response.status === 401) {
-    // Try refresh
-    const refreshed = await refreshAccessToken();
-    if (!refreshed) {
-      useAuthStore.getState().clearAuth();
-      window.location.href = '/';
-      throw new Error('Session expired');
-    }
-    // Retry original request
-    return apiClient(endpoint, options);
-  }
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw error;
-  }
-
-  return response.json();
-}
-
-async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/validate`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    useAuthStore.getState().setAuth(data.user, data.accessToken);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// --- Request cancellation (TECH.md §8) ---------------------------------
-// EXIT, LOGOUT, and CANCEL call abortAllRequests() before executing their
-// primary action. Every caller of apiClient() that wants to be cancellable
-// must obtain a signal via createRequestSignal() and pass it through options.
-const abortControllers = new Set<AbortController>();
-
-export function createRequestSignal(): AbortSignal {
-  const controller = new AbortController();
-  abortControllers.add(controller);
-  return controller.signal;
-}
-
-export function abortAllRequests(): void {
-  abortControllers.forEach((c) => c.abort());
-  abortControllers.clear();
-}
-```
-
-### TanStack Query Auth Hooks
+### Auth Functions and Hooks
 
 ```typescript
 // features/auth/api/authApi.ts
-import { apiClient } from '@/lib/api';
-import { useAuthStore } from '../stores/authStore';
+import type { User } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabase';
 
-export const authKeys = {
-  health: ['health'] as const,
-  validate: ['validate'] as const,
-  user: ['user'] as const,
-};
+export const authKeys = { session: ['supabase', 'session'] as const, user: ['supabase', 'user'] as const };
+export type LoginInput = { email: string; password: string; captchaToken?: string };
 
-export async function checkHealth() {
-  return apiClient<{ status: string }>('/api/health');
-}
-
-export async function login(credentials: { email: string; password: string; captchaToken?: string }) {
-  return apiClient<{ user: User; accessToken: string }>('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(credentials),
+export async function login(input: LoginInput): Promise<{ user: User; accessToken: string }> {
+  const { data, error } = await getSupabaseClient().auth.signInWithPassword({
+    email: input.email,
+    password: input.password,
+    options: input.captchaToken ? { captchaToken: input.captchaToken } : undefined,
   });
+  if (error || !data.user || !data.session) throw error ?? new Error('No Supabase session returned.');
+  return { user: data.user, accessToken: data.session.access_token };
 }
 
-export async function validateSession() {
-  return apiClient<{ user: User; accessToken: string }>('/api/auth/validate', {
-    method: 'POST',
-  });
-}
-
-// NOTE (DECISIONS.md ADR-014): This function is defined for API-contract
-// completeness (TECH.md §6) and possible future use (e.g., refresh-token
-// revocation), but it must NOT be called from the LOGOUT button flow.
-// LOGOUT is client-side-only — see useLogout() below.
-export async function logout() {
-  return apiClient<void>('/api/auth/logout', { method: 'POST' });
+export async function getCurrentSession(): Promise<{ user: User; accessToken: string } | null> {
+  const { data, error } = await getSupabaseClient().auth.getSession();
+  if (error) throw error;
+  return data.session ? { user: data.session.user, accessToken: data.session.access_token } : null;
 }
 ```
 
 ```typescript
 // features/auth/hooks/useAuth.ts
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authKeys, checkHealth, login, validateSession, logout } from '../api/authApi';
-import { useAuthStore } from '../stores/authStore';
+import { clearLocalSupabaseSession, getSupabaseClient } from '@/lib/supabase';
 import { abortAllRequests } from '@/lib/api';
-
-export function useHealthCheck() {
-  return useQuery({
-    queryKey: authKeys.health,
-    queryFn: checkHealth,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
-  });
-}
+import { authKeys, getCurrentSession, login } from '../api/authApi';
+import { useAuthStore } from '../stores/authStore';
 
 export function useValidateSession() {
-  const setAuth = useAuthStore((s) => s.setAuth);
-  return useQuery({
-    queryKey: authKeys.validate,
-    queryFn: async () => {
-      const data = await validateSession();
-      setAuth(data.user, data.accessToken);
-      return data;
-    },
-    retry: false,
-    staleTime: Infinity,
-  });
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setLoading = useAuthStore((state) => state.setLoading);
+  const query = useQuery({ queryKey: authKeys.session, queryFn: getCurrentSession, retry: false, staleTime: Infinity });
+  useEffect(() => {
+    if (query.isSuccess) query.data ? setAuth(query.data.user, query.data.accessToken) : clearAuth();
+    if (query.isError) { clearAuth(); setLoading(false); }
+  }, [query.isSuccess, query.isError, query.data, setAuth, clearAuth, setLoading]);
+  useEffect(() => {
+    const { data: subscription } = getSupabaseClient().auth.onAuthStateChange((_event, session) => {
+      session ? setAuth(session.user, session.access_token) : clearAuth();
+    });
+    return () => subscription.subscription.unsubscribe();
+  }, [setAuth, clearAuth]);
+  return query;
 }
 
 export function useLogin() {
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: login,
-    onSuccess: (data) => {
-      setAuth(data.user, data.accessToken);
-      queryClient.invalidateQueries({ queryKey: authKeys.validate });
-    },
-  });
+  return useMutation({ mutationFn: login, onSuccess: (data) => {
+    setAuth(data.user, data.accessToken); queryClient.invalidateQueries({ queryKey: authKeys.session });
+  }});
 }
 
-// LOGOUT is client-side-only per SPEC.md §3.6.4 / TECH.md §7 / DECISIONS.md
-// ADR-014: no server call, no waiting for pending transactions. It is a
-// plain callback, NOT a TanStack Query mutation — there is nothing to await.
+// ADR-014 remains intentional: LOGOUT is a local session clear. Do NOT call
+// supabase.auth.signOut() here. That call remains available only for a future
+// explicit revocation flow; this tension is recorded by ADR-017.
 export function useLogout() {
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const queryClient = useQueryClient();
-
-  return function performLogout() {
-    abortAllRequests(); // TECH.md §8 — abort in-flight requests first
-    clearAuth();
-    queryClient.clear();
-    window.location.href = '/'; // hard redirect to S000
-  };
+  return () => { abortAllRequests(); clearLocalSupabaseSession(); clearAuth(); queryClient.clear(); window.location.href = '/'; };
 }
 ```
+
+### Cancellation Utilities
+
+```typescript
+// lib/api.ts
+const abortControllers = new Set<AbortController>();
+export function createRequestSignal(): AbortSignal {
+  const controller = new AbortController(); abortControllers.add(controller); return controller.signal;
+}
+export function abortAllRequests(): void { abortControllers.forEach((c) => c.abort()); abortControllers.clear(); }
+
+// Supabase SDK Storage methods do not universally accept an external AbortSignal.
+// Race the UI result so CANCEL/EXIT/LOGOUT can return immediately, then ignore a
+// late SDK result; this does not guarantee the underlying network request stops.
+export function raceWithAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+  return Promise.race([operation, new Promise<T>((_, reject) =>
+    signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true })
+  )]);
+}
+```
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — AbortController cancelled `fetch` requests through `apiClient`. NEW — the utility remains for plain fetch and best-effort UI cancellation of Supabase SDK operations; do not claim unsupported hard network abort semantics.
 
 ### ProtectedRoute Guard
 
@@ -269,16 +225,8 @@ import { useAuthStore } from '../stores/authStore';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
-
-  if (isLoading) {
-    return <div className="flex h-screen items-center justify-center"><Spinner /></div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
+  if (isLoading) return <div className="flex h-screen items-center justify-center"><Spinner /></div>;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
 }
 ```
 
@@ -286,7 +234,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 ## P03 — Form Pattern (React Hook Form + Zod)
 
-> **Extended 2026-08-17:** Added the `s001-exit` EXIT button, a failed-attempt counter, hCaptcha trigger after 3 failures, and 15-min lockout after 5 failures — all required by SPEC.md §3.2.3 / §1 but missing from the original pattern.
+> **Extended 2026-08-17:** The login form keeps its email/password/CAPTCHA/lockout structure; `useLogin()` now delegates its underlying request to Supabase Auth (P02). Supabase enforces rate limiting/CAPTCHA server-side; retain the 3-failure/5-failure UI only when project configuration matches.
 
 ```typescript
 // features/auth/components/LoginForm.tsx
@@ -321,7 +269,7 @@ export function LoginForm() {
     defaultValues: { rememberMe: false },
   });
 
-  // SPEC.md §1 / §3.2.3: CAPTCHA required after 3 failed attempts, 15-min lockout after 5.
+  // Supabase Auth enforces rate limiting/CAPTCHA. Keep matching UX thresholds only when configured in the Supabase project.
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
@@ -336,8 +284,9 @@ export function LoginForm() {
     loginMutation.mutate(
       { ...data, captchaToken },
       {
-        onError: (err: any) => {
-          if (err?.status === 429) {
+        onError: (err: unknown) => {
+          const status = typeof err === 'object' && err !== null && 'status' in err ? Number(err.status) : undefined;
+          if (status === 429) {
             setLockedUntil(Date.now() + 15 * 60 * 1000);
             return;
           }
@@ -808,77 +757,64 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
 
 ---
 
-## P06 — GIST API Pattern
+## P06 — Supabase Storage API Pattern
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `gistApi.ts` called `/api/gist/files`, `/load`, `/export`, and `/check` through a backend. NEW — `supercvStorageApi.ts` calls the fixed Supabase Storage bucket `Applai`, folder `SuperCV` directly, and derives filename collisions from a listing.
 
 ```typescript
-// features/resume/api/gistApi.ts
-// NOTE: gistUrl is REQUIRED on /api/gist/files and /api/gist/load per
-// TECH.md §6's API contract — there is no server-side "default" GIST.
-import { apiClient } from '@/lib/api';
-import { TreeNode } from '../components/TreeView';
+// features/resume/api/supercvStorageApi.ts
+import { getSupabaseClient } from '@/lib/supabase';
+import type { TreeNode } from '../components/TreeView';
 
-export const gistKeys = {
-  files: (gistUrl: string) => ['gist', 'files', gistUrl] as const,
-  load: (gistUrl: string, filename: string) => ['gist', 'load', gistUrl, filename] as const,
+export interface SupabaseStorageFile { name: string; path: string; size?: number; updated_at?: string; }
+const BUCKET = 'Applai';
+const FOLDER = 'SuperCV';
+const objectPath = (filename: string) => `${FOLDER}/${filename}`;
+
+export const superCVKeys = {
+  files: ['supabase-storage', BUCKET, FOLDER] as const,
+  load: (filename: string) => ['supabase-storage', BUCKET, FOLDER, filename] as const,
 };
 
-export async function listGistFiles(gistUrl: string) {
-  return apiClient<Array<{ filename: string; raw_url: string }>>(
-    `/api/gist/files?gistUrl=${encodeURIComponent(gistUrl)}`
-  );
+export async function listSuperCVFiles(): Promise<SupabaseStorageFile[]> {
+  const { data, error } = await getSupabaseClient().storage.from(BUCKET).list(FOLDER);
+  if (error) throw error;
+  return (data ?? []).map((file) => ({ name: file.name, path: objectPath(file.name), size: file.metadata?.size, updated_at: file.updated_at }));
 }
 
-export async function loadGistFile(gistUrl: string, filename: string) {
-  return apiClient<TreeNode[]>(
-    `/api/gist/load?gistUrl=${encodeURIComponent(gistUrl)}&filename=${encodeURIComponent(filename)}`
-  );
+export async function loadSuperCVFile(filename: string): Promise<TreeNode[]> {
+  const { data, error } = await getSupabaseClient().storage.from(BUCKET).download(objectPath(filename));
+  if (error) throw error;
+  return JSON.parse(await data.text()) as TreeNode[]; // validate with Zod before storing in production
 }
 
-export async function checkFilenameExists(prefix: string) {
-  return apiClient<{ exists: boolean; nextSuffix?: number }>(
-    `/api/gist/check?prefix=${encodeURIComponent(prefix)}`
-  );
+export async function getAvailableExportFilename(baseName: string): Promise<string> {
+  const names = new Set((await listSuperCVFiles()).map((file) => file.name.toLowerCase()));
+  const initial = `${baseName}.JSON`;
+  if (!names.has(initial.toLowerCase())) return initial;
+  for (let suffix = 1; suffix <= 99; suffix += 1) {
+    const candidate = `${baseName}${String(suffix).padStart(2, '0')}.JSON`;
+    if (!names.has(candidate.toLowerCase())) return candidate;
+  }
+  throw new Error('Export failed: too many files with this name. Please choose a different name.');
 }
 
-export async function exportGistFile(filename: string, content: TreeNode[]) {
-  return apiClient<{ filename: string; url: string }>('/api/gist/export', {
-    method: 'POST',
-    body: JSON.stringify({ filename, content }),
-  });
+export async function uploadSuperCVFile(filename: string, content: TreeNode[]): Promise<void> {
+  const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+  const { error } = await getSupabaseClient().storage.from(BUCKET).upload(objectPath(filename), blob, { upsert: false });
+  if (error) throw error;
 }
 ```
 
 ```typescript
-// features/resume/hooks/useGist.ts
+// features/resume/hooks/useSuperCVStorage.ts
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { gistKeys, listGistFiles, loadGistFile, checkFilenameExists, exportGistFile } from '../api/gistApi';
+import { superCVKeys, listSuperCVFiles, loadSuperCVFile, uploadSuperCVFile, getAvailableExportFilename } from '../api/supercvStorageApi';
 
-export function useGistFiles(gistUrl: string) {
-  return useQuery({
-    queryKey: gistKeys.files(gistUrl),
-    queryFn: () => listGistFiles(gistUrl),
-    enabled: !!gistUrl,
-  });
-}
-
-export function useLoadGist(gistUrl: string, filename: string) {
-  return useQuery({
-    queryKey: gistKeys.load(gistUrl, filename),
-    queryFn: () => loadGistFile(gistUrl, filename),
-    enabled: !!gistUrl && !!filename,
-  });
-}
-
-export function useExportGist() {
-  return useMutation({
-    mutationFn: ({ filename, content }: { filename: string; content: unknown[] }) =>
-      exportGistFile(filename, content as TreeNode[]),
-  });
-}
-
-export function useCheckFilename() {
-  return useMutation({ mutationFn: checkFilenameExists });
-}
+export function useSuperCVFiles() { return useQuery({ queryKey: superCVKeys.files, queryFn: listSuperCVFiles }); }
+export function useLoadSuperCV(filename: string) { return useQuery({ queryKey: superCVKeys.load(filename), queryFn: () => loadSuperCVFile(filename), enabled: Boolean(filename) }); }
+export function useExportSuperCV() { return useMutation({ mutationFn: ({ filename, content }: { filename: string; content: TreeNode[] }) => uploadSuperCVFile(filename, content) }); }
+export function useAvailableExportFilename() { return useMutation({ mutationFn: getAvailableExportFilename }); }
 ```
 
 ---
@@ -889,61 +825,33 @@ export function useCheckFilename() {
 // features/resume/components/MainScreen.tsx (export logic)
 import { useState } from 'react';
 import { useResumeStore } from '../stores/resumeStore';
-import { useExportGist, useCheckFilename } from '../hooks/useGist';
+import { useExportSuperCV, useAvailableExportFilename } from '../hooks/useSuperCVStorage';
 import { ExportDialog } from './ExportDialog';
-import { useMessage } from '@/hooks/useMessage'; // SMSG wrapper
+import { useMessage } from '@/hooks/useMessage';
 
 export function MainScreen() {
   const [exportOpen, setExportOpen] = useState(false);
   const { getSelectedSubset } = useResumeStore();
-  const exportMutation = useExportGist();
-  const checkMutation = useCheckFilename();
+  const exportMutation = useExportSuperCV();
+  const filenameMutation = useAvailableExportFilename();
   const { showSuccess, showError } = useMessage();
-
   const handleExport = async (baseName: string) => {
     const selectedNodes = getSelectedSubset();
-    if (selectedNodes.length === 0) {
-      showError('No nodes selected. Please select at least one node to export.');
-      return;
-    }
-
+    if (!selectedNodes.length) return showError('No nodes selected. Please select at least one node to export.');
     try {
-      // Check for filename collision
-      const checkResult = await checkMutation.mutateAsync(baseName);
-      let finalName = baseName;
-
-      if (checkResult.exists && checkResult.nextSuffix !== undefined) {
-        const suffix = checkResult.nextSuffix.toString().padStart(2, '0');
-        finalName = `${baseName}${suffix}`;
-      }
-
-      await exportMutation.mutateAsync({
-        filename: `${finalName}.JSON`,
-        content: selectedNodes,
-      });
-
-      showSuccess(`CV exported successfully as ${finalName}.JSON`);
-    } catch (err) {
-      showError('Export failed. Please try again.');
-    }
+      const filename = await filenameMutation.mutateAsync(baseName);
+      await exportMutation.mutateAsync({ filename, content: selectedNodes });
+      showSuccess(`CV exported successfully as ${filename}`);
+    } catch { showError('Export failed. Please try again.'); }
   };
-
-  return (
-    <div id="s002-container">
-      <ScreenBadge screenId="S002" />
-      {/* ... header, buttons, TVC01 ... */}
-      <Button id="s002-export" onClick={() => setExportOpen(true)}>
-        Export
-      </Button>
-      <ExportDialog
-        open={exportOpen}
-        onOpenChange={setExportOpen}
-        onExport={handleExport}
-      />
-    </div>
-  );
+  return <div id="s002-container"><ScreenBadge screenId="S002" />
+    <Button id="s002-export" onClick={() => setExportOpen(true)}>Export</Button>
+    <ExportDialog open={exportOpen} onOpenChange={setExportOpen} onExport={handleExport} />
+  </div>;
 }
 ```
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — P07 checked and exported through GIST mutations. NEW — it lists `Applai/SuperCV` to choose the collision-free name and uploads the JSON Blob to the same folder with `upsert: false`.
 
 ---
 
@@ -996,6 +904,8 @@ export function useMessage() {
 ```
 
 ### API Error Handler
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — API errors used the custom `{ error: { code, message } }` response envelope. NEW — auth handlers also recognize Supabase `AuthApiError` status/message and Storage errors; normalize them before invoking SMSG.
 
 ```typescript
 // lib/apiErrorHandler.ts
@@ -1276,7 +1186,7 @@ function setAllSelected(nodes: TreeNode[]): TreeNode[] {
 
 ## P15 — S002D2 Import Dialogue Pattern
 
-> Added 2026-08-17 to close a gap: SPEC.md §3.5 fully specifies S002D2 (GIST URL + filename entry, pre-fill cascade, auto-fetch file list, error handling) but no pattern existed for it, despite TECH.md §2 listing `ImportDialog.tsx` and `useGist`/`useSettings` as required files.
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — the dialog had a `gistUrl` schema field and URL prefill cascade. NEW — it is a fixed `Applai/SuperCV` file picker populated from P06; there is no URL input, URL validation, or `gistUrl` state.
 
 ```typescript
 // features/resume/components/ImportDialog.tsx
@@ -1284,204 +1194,82 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ScreenBadge } from '@/components/common/ScreenBadge';
-import { useGistFiles, useLoadGist } from '../hooks/useGist';
+import { useSuperCVFiles } from '../hooks/useSuperCVStorage';
+import { loadSuperCVFile } from '../api/supercvStorageApi';
 import { useResumeStore } from '../stores/resumeStore';
 import { useMessage } from '@/hooks/useMessage';
 
-const importSchema = z.object({
-  gistUrl: z
-    .string()
-    .min(1, 'Please enter a valid HTTPS URL.')
-    .max(500)
-    .regex(/^https:\/\/[a-zA-Z0-9._~:/?#[\]@!$&'()*+,;=-]+$/, 'Please enter a valid HTTPS URL.'),
-  filename: z
-    .string()
-    .min(3, 'Filename must be 3\u201360 characters.')
-    .max(60, 'Filename must be 3\u201360 characters.')
-    .regex(/^[a-zA-Z0-9_.-]+$/, 'Only letters, numbers, dots, hyphens, and underscores allowed.'),
-});
-
+const importSchema = z.object({ filename: z.string().min(3).max(60).regex(/^[a-zA-Z0-9_.-]+$/) });
 type ImportFormData = z.infer<typeof importSchema>;
+interface ImportDialogProps { open: boolean; onOpenChange: (open: boolean) => void; defaultFilename?: string; }
 
-interface ImportDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  defaultGistUrl?: string; // pre-fill cascade result: session cache -> user settings -> VITE_DEFAULT_GIST_URL
-  defaultFilename?: string;
-}
-
-export function ImportDialog({ open, onOpenChange, defaultGistUrl = '', defaultFilename = '' }: ImportDialogProps) {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    reset,
-    formState: { errors, isValid },
-  } = useForm<ImportFormData>({
-    resolver: zodResolver(importSchema),
-    defaultValues: { gistUrl: defaultGistUrl, filename: defaultFilename },
-    mode: 'onBlur',
-  });
-
-  const gistUrl = watch('gistUrl');
-  const { setMasterCV, setGistSource } = useResumeStore();
+export function ImportDialog({ open, onOpenChange, defaultFilename = '' }: ImportDialogProps) {
+  const { register, handleSubmit, reset, formState: { errors, isValid } } = useForm<ImportFormData>({ resolver: zodResolver(importSchema), defaultValues: { filename: defaultFilename }, mode: 'onBlur' });
+  const filesQuery = useSuperCVFiles();
+  const { setMasterCV, setStorageFilename } = useResumeStore();
   const { showSuccess, showError } = useMessage();
-
-  // Auto-fetch file list on valid URL; populate filename with first *.JSON file found
-  const filesQuery = useGistFiles(gistUrl && importSchema.shape.gistUrl.safeParse(gistUrl).success ? gistUrl : '');
   useEffect(() => {
-    if (filesQuery.data?.length && !defaultFilename) {
-      const firstJson = filesQuery.data.find((f) => f.filename.toLowerCase().endsWith('.json'));
-      if (firstJson) setValue('filename', firstJson.filename);
-    }
-  }, [filesQuery.data, defaultFilename, setValue]);
-
-  useEffect(() => {
-    if (open) reset({ gistUrl: defaultGistUrl, filename: defaultFilename });
-  }, [open, defaultGistUrl, defaultFilename, reset]);
-
-  const loadMutation = useLoadGist(gistUrl, watch('filename'));
-
-  const handleCancel = () => onOpenChange(false); // no side effects (SPEC §3.5.3)
-
-  const onSubmit = async (data: ImportFormData) => {
-    try {
-      // GET /api/gist/load?gistUrl={url}&filename={name} — see P06/P15
-      const nodes = await loadMutation.refetch();
-      if (!nodes.data) throw new Error('EMPTY');
-      setMasterCV(nodes.data); // all nodes default selected = true (SPEC §3.5.5)
-      setGistSource(data.gistUrl, data.filename); // cache for future pre-fill
-      onOpenChange(false);
-      showSuccess(`MasterResume loaded: ${data.filename}`);
-    } catch {
-      showError('GIST not found or not accessible. Please check the URL and try again.');
-    }
+    if (!open || !filesQuery.data) return;
+    const jsonNames = filesQuery.data.filter((f) => f.name.toLowerCase().endsWith('.json')).map((f) => f.name);
+    reset({ filename: jsonNames.includes(defaultFilename) ? defaultFilename : jsonNames[0] ?? '' });
+  }, [open, filesQuery.data, defaultFilename, reset]);
+  const onSubmit = async ({ filename }: ImportFormData) => {
+    try { const nodes = await loadSuperCVFile(filename); setMasterCV(nodes); setStorageFilename(filename); onOpenChange(false); showSuccess(`MasterResume loaded: ${filename}`); }
+    catch { showError('SuperCV folder or selected file is not accessible. Please try another file.'); }
   };
-
-  return (
-    <Dialog open={open} onOpenChange={handleCancel}>
-      <DialogContent className="sm:max-w-[420px]">
-        <ScreenBadge screenId="S002D2" />
-        <DialogHeader>
-          <DialogTitle id="s002d2-title">Import Master CV</DialogTitle>
-          <DialogDescription id="s002d2-prompt">
-            Please enter the GIST URL and then choose a file for import.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="s002d2-url">GIST URL</Label>
-              <Input
-                id="s002d2-url"
-                placeholder="https://gist.github.com/..."
-                aria-invalid={errors.gistUrl ? 'true' : 'false'}
-                aria-describedby={errors.gistUrl ? 's002d2-url-error' : undefined}
-                {...register('gistUrl')}
-              />
-              {errors.gistUrl && (
-                <span id="s002d2-url-error" className="text-sm text-red-500">
-                  {errors.gistUrl.message}
-                </span>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="s002d2-filename">MasterResume File Name</Label>
-              <Input
-                id="s002d2-filename"
-                placeholder="MasterResume.json"
-                aria-invalid={errors.filename ? 'true' : 'false'}
-                aria-describedby={errors.filename ? 's002d2-filename-error' : undefined}
-                {...register('filename')}
-              />
-              {errors.filename && (
-                <span id="s002d2-filename-error" className="text-sm text-red-500">
-                  {errors.filename.message}
-                </span>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={!isValid}>
-              Import
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="sm:max-w-[420px]">
+    <ScreenBadge screenId="S002D2" /><DialogHeader><DialogTitle id="s002d2-title">Import Master CV</DialogTitle>
+    <DialogDescription id="s002d2-prompt">Choose a file from Supabase Storage: Applai/SuperCV.</DialogDescription></DialogHeader>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate><Label htmlFor="s002d2-filename">MasterResume File Name</Label>
+      <select id="s002d2-filename" {...register('filename')} aria-invalid={errors.filename ? 'true' : 'false'}>
+        <option value="">Select a JSON file</option>{filesQuery.data?.filter((f) => f.name.toLowerCase().endsWith('.json')).map((f) => <option key={f.path} value={f.name}>{f.name}</option>)}
+      </select>{errors.filename && <span id="s002d2-filename-error">Select a valid file from the SuperCV folder.</span>}
+      <DialogFooter><Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button><Button type="submit" disabled={!isValid || filesQuery.isLoading}>Import</Button></DialogFooter>
+    </form></DialogContent></Dialog>;
 }
 ```
 
-**Auto-open on S002 mount (SPEC.md §3.5.6):** In `MainScreen.tsx`, when `masterCV === null` after the 500ms mount delay, set `isImportOpen = true` in the Zustand `ui` slice (TECH.md §8). If the user cancels without importing, show a persistent `SMSG type: info` — *"No MasterResume loaded. Click 'Load from GIST' to import."*
+**Auto-open on S002 mount (SPEC.md §3.5.6):** when `masterCV === null` after the 500ms mount delay, set `isImportOpen = true`; on cancellation show *"No MasterResume loaded. Click 'Load from SuperCV' to import."*
 
 ---
 
 ## P16 — S002S1 Settings Panel Pattern
 
-> Added 2026-08-17 to close a gap: SPEC.md §3.8 fully specifies S002S1 but TECH.md §2's `useSettings` hook and `SettingsPanel.tsx` had no pattern.
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `UserSettings` and settings API persisted `gistUrl` and fetched GIST content. NEW — settings contain only `masterResumeFile` and `preferredCvName`; use an RLS-scoped Supabase settings table when persistence is implemented.
 
 ```typescript
 // features/resume/api/settingsApi.ts
-import { apiClient } from '@/lib/api';
-
-export interface UserSettings {
-  gistUrl?: string;
-  masterResumeFile?: string;
-  preferredCvName?: string;
-}
-
+import { getSupabaseClient } from '@/lib/supabase';
+export interface UserSettings { masterResumeFile?: string; preferredCvName?: string; }
 export const settingsKeys = { settings: ['user', 'settings'] as const };
 
-export async function getUserSettings() {
-  return apiClient<UserSettings>('/api/user/settings');
+export async function getUserSettings(): Promise<UserSettings> {
+  const { data: { user } } = await getSupabaseClient().auth.getUser();
+  if (!user) throw new Error('Unauthenticated');
+  const { data, error } = await getSupabaseClient().from('user_settings').select('master_resume_file, preferred_cv_name').eq('user_id', user.id).maybeSingle();
+  if (error) throw error;
+  return { masterResumeFile: data?.master_resume_file ?? undefined, preferredCvName: data?.preferred_cv_name ?? undefined };
 }
-
-export async function patchUserSettings(patch: Partial<UserSettings>) {
-  return apiClient<UserSettings>('/api/user/settings', {
-    method: 'PATCH',
-    body: JSON.stringify(patch),
-  });
+export async function patchUserSettings(patch: Partial<UserSettings>): Promise<UserSettings> {
+  const { data: { user } } = await getSupabaseClient().auth.getUser(); if (!user) throw new Error('Unauthenticated');
+  const { error } = await getSupabaseClient().from('user_settings').upsert({ user_id: user.id, master_resume_file: patch.masterResumeFile ?? null, preferred_cv_name: patch.preferredCvName ?? null });
+  if (error) throw error; return patch;
 }
 ```
 
 ```typescript
 // features/resume/hooks/useSettings.ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { settingsKeys, getUserSettings, patchUserSettings, UserSettings } from '../api/settingsApi';
-
-export function useUserSettings() {
-  return useQuery({ queryKey: settingsKeys.settings, queryFn: getUserSettings });
-}
-
-export function useSaveSettings() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (patch: Partial<UserSettings>) => patchUserSettings(patch),
-    onSuccess: (data) => {
-      queryClient.setQueryData(settingsKeys.settings, data);
-    },
-  });
-}
+import { settingsKeys, getUserSettings, patchUserSettings, type UserSettings } from '../api/settingsApi';
+export function useUserSettings() { return useQuery({ queryKey: settingsKeys.settings, queryFn: getUserSettings }); }
+export function useSaveSettings() { const queryClient = useQueryClient(); return useMutation({ mutationFn: (patch: Partial<UserSettings>) => patchUserSettings(patch), onSuccess: (data) => queryClient.setQueryData(settingsKeys.settings, data) }); }
 ```
 
-**Dirty-check on Cancel/Escape/Overlay-click (SPEC.md §3.8.3):** `SettingsPanel.tsx` must track React Hook Form's `formState.isDirty` and, if dirty, route Cancel/Escape/Overlay-click through a confirmation `MessagePopup` ("You have unsaved changes. Discard them?") before closing — reuse the P04 `MessagePopup` pattern rather than closing immediately (unlike P04's `ExportDialog`, which has no dirty state to guard).
+**Dirty-check:** `SettingsPanel.tsx` tracks `formState.isDirty` and routes Cancel/Escape/Overlay-click through the P04 `MessagePopup` confirmation. Never reintroduce a storage-URL setting: the folder stays `Applai/SuperCV`.
 
 ---
 
@@ -1490,9 +1278,9 @@ export function useSaveSettings() {
 | Type | Pattern | Example |
 |------|---------|---------|
 | Component | PascalCase.tsx | `LoginPopup.tsx`, `TreeView.tsx`, `ImportDialog.tsx`, `SettingsPanel.tsx`, `ExitButton.tsx`, `CancelButton.tsx` |
-| Hook | use[camelCase].ts | `useAuth.ts`, `useGist.ts`, `useSettings.ts`, `useTreeView.ts` |
+| Hook | use[camelCase].ts | `useAuth.ts`, `useSuperCVStorage.ts`, `useSettings.ts`, `useTreeView.ts` |
 | Store | [feature]Store.ts | `authStore.ts`, `resumeStore.ts` |
-| API | [feature]Api.ts | `authApi.ts`, `gistApi.ts`, `settingsApi.ts` |
+| API | [feature]Api.ts | `authApi.ts`, `supercvStorageApi.ts`, `settingsApi.ts` |
 | Type | [Name].ts or inline | `TreeNode`, `User`, `UserSettings` |
 | Utility | camelCase.ts | `apiErrorHandler.ts` |
 | Test | [Name].test.tsx | `LoginForm.test.tsx` |

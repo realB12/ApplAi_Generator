@@ -1,18 +1,22 @@
 # TECH.md :: TechStack Applai_Generator for KIMI.com vibecoding
 
+> **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
+
 * -> this document is based on [TECH template](../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/TECH_template.md)
 
 ## Architectural Overview
 ```
-┌─────────────────┐      HTTP/REST      ┌──────────────────┐
-│   Vite + TS     │ ◄─────────────────► │ ASP.NET Core 9   │
-│   (SPA)         │                     │ Minimal API      │
-│                 │                     │                  │
-│ • Tree View     │                     │ • Gist Reader    │
-│ • Node Edit     │                     │ • Gist Writer    │
-│ • Selection     │                     │ • GitHub PAT     │
-└─────────────────┘                     └──────────────────┘
+┌─────────────────┐        supabase-js        ┌─────────────────────────────┐
+│   Vite + TS     │ ◄────────────────────────► │ Supabase                    │
+│   (SPA)         │                            │ • Auth (email + password)   │
+│                 │                            │ • Storage bucket: Applai    │
+│ • Tree View     │                            │   folder: SuperCV           │
+│ • Node Edit     │                            │ • JWT-scoped Storage RLS    │
+│ • Selection     │                            └─────────────────────────────┘
+└─────────────────┘
 ```
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — the SPA called an ASP.NET Core 9 Minimal API that held a GitHub PAT and proxied Gist operations. NEW — the SPA calls Supabase Auth and Storage directly through `@supabase/supabase-js`; no backend is required for the current RLS-scoped MVP (ADR-017).
 
 ## 1. TECH Stack
 
@@ -35,7 +39,8 @@
 | Icons | Lucide React | latest | Consistent, tree-shakeable |
 | Date Handling | date-fns | 4.x | Modular, immutable |
 | HTTP Client | Fetch API | native | No extra dependency |
-| CAPTCHA | hCaptcha | v2 invisible | Rate-limit protection after 3 failed logins |
+| Supabase Client | @supabase/supabase-js | latest | Auth + Storage client SDK — replaces custom auth/Gist backend, see ADR-017 |
+| CAPTCHA | hCaptcha / Turnstile | optional | Supabase Auth project-level CAPTCHA integration; pass `captchaToken` when enabled |
 
 > **Note:** TVC01 (TreeView Component) is a **custom feature component** built with `@tanstack/react-virtual` for performance and shadcn/ui primitives for UI. No external TreeView library is used.
 
@@ -73,9 +78,9 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   |   |   |   ├── types/         # Auth types
 |   |   |   |   |   └── utils/         # Auth utilities
 |   |   |   |   └── resume/            # RESUME Feature — S002, TVC01, S002D1, S002D2, S002S1
-|   |   |   |       ├── api/           # GIST API calls, User Settings API calls
+|   |   |   |       ├── api/           # Supabase Storage (Applai/SuperCV) API calls, User Settings API calls  <!-- UPDATED 2026-08-17 (Supabase migration): OLD "GIST API calls" -->
 |   |   |   |       ├── components/    # S002, TVC01, S002D1, S002D2, S002S1 components
-|   |   |   |       ├── hooks/         # useGist, useTreeView, useSettings
+|   |   |   |       ├── hooks/         # useSuperCVFiles/useLoadSuperCV/useExportSuperCV, useTreeView, useSettings  <!-- UPDATED 2026-08-17 (Supabase migration): OLD "useGist" -->
 |   |   |   |       ├── stores/        # Resume Zustand slice
 |   |   |   |       ├── types/         # MasterCV JSON types, UserSettings types
 |   |   |   |       └── utils/         # Tree helpers, export helpers
@@ -149,7 +154,6 @@ interface User {
 }
 
 interface UserSettings {
-  gistUrl?: string;
   masterResumeFile?: string;
   preferredCvName?: string;
 }
@@ -163,41 +167,48 @@ interface MasterCVNode {
   children?: MasterCVNode[];
 }
 
-interface GistFile {
-  filename: string;
-  raw_url?: string;
+interface SupabaseStorageFile {
+  name: string;
+  path: string;
+  size?: number;
+  updated_at?: string;
 }
 ```
 
-> **Note:** `GistFile` is used for listing GIST contents only. The `load` endpoint returns `MasterCVNode[]` (already parsed JSON tree), not a raw file with string content.
+> **Note:** `SupabaseStorageFile` maps the metadata returned by `supabase.storage.from('Applai').list('SuperCV')`. Download a selected object, call `.text()`, then `JSON.parse` and validate it into `MasterCVNode[]`.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `GistFile` represented a backend-proxied GIST listing. NEW — `SupabaseStorageFile` represents fixed-folder Supabase Storage metadata.
 
 ## 6. API Contract
 
-### Authentication Endpoints
+### Supabase Auth Calls (No Custom REST Endpoints)
 
-| Endpoint | Method | Request | Response | Auth |
-| -------- | ------ | ------- | -------- | ---- |
-| `/api/health` | GET | — | `{ status: "ok" }` | No |
-| `/api/auth/login` | POST | `{ email, password, captchaToken?: string }` | `{ user, accessToken }` + httpOnly refresh cookie | No |
-| `/api/auth/validate` | POST | — (refresh token from httpOnly cookie) | `{ user, accessToken }` | No |
-| `/api/auth/logout` | POST | — | `204` | Yes |
-| `/api/auth/me` | GET | — | `User` | Yes |
+| SDK call | Input | Result / use | Authentication |
+| -------- | ----- | ------------ | -------------- |
+| `supabase.auth.signInWithPassword()` | `{ email, password, options?: { captchaToken } }` | `{ data: { user, session }, error }`; map `AuthApiError.status`/`message` to S001 feedback | No existing session required |
+| `supabase.auth.getSession()` | — | restores current in-memory session when available | Client session |
+| `supabase.auth.onAuthStateChange()` | listener | keeps Zustand auth state synchronized with Supabase events | Client session |
+| `supabase.auth.getUser()` | — | authenticated Supabase user | Client session |
+| `supabase.auth.signOut()` | — | available for an explicit future revocation flow, but not invoked by LOGOUT per ADR-014 | Client session |
 
-### GIST Endpoints
+### Supabase Storage Calls (No Custom REST Endpoints)
 
-| Endpoint | Method | Request | Response | Auth |
-| -------- | ------ | ------- | -------- | ---- |
-| `/api/gist/files` | GET | `?gistUrl={url}` | `GistFile[]` | Yes |
-| `/api/gist/load` | GET | `?gistUrl={url}&filename={name}` | `MasterCVNode[]` | Yes |
-| `/api/gist/export` | POST | `{ filename, content: MasterCVNode[] }` | `{ filename, url }` | Yes |
-| `/api/gist/check` | GET | `?prefix={name}` | `{ exists: boolean, nextSuffix?: number }` | Yes |
+| SDK call | Input | Result / use | Authentication |
+| -------- | ----- | ------------ | -------------- |
+| `supabase.storage.from('Applai').list('SuperCV')` | optional list options | `SupabaseStorageFile[]`; list master/exported files and derive collision checks | Supabase Auth JWT + Storage RLS |
+| `supabase.storage.from('Applai').download('SuperCV/<filename>')` | object path | `Blob`; call `.text()` then `JSON.parse` to load MasterCV data | Supabase Auth JWT + Storage RLS |
+| `supabase.storage.from('Applai').upload('SuperCV/<filename>', blob, { upsert: false })` | object path and JSON Blob | creates generated CV object; client lists names first for auto-suffixing | Supabase Auth JWT + Storage RLS |
 
-### User Settings Endpoints
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `/api/auth/*` and `/api/gist/*` REST endpoints were served by a custom backend. NEW — the SPA uses Supabase Auth and direct Storage SDK calls; no separate collision-check endpoint exists.
 
-| Endpoint | Method | Request | Response | Auth |
-| -------- | ------ | ------- | -------- | ---- |
-| `/api/user/settings` | GET | — | `UserSettings` | Yes |
-| `/api/user/settings` | PATCH | `{ gistUrl?, masterResumeFile?, preferredCvName? }` | `UserSettings` | Yes |
+### User Settings Persistence
+
+| Operation | Data | Authorization |
+| --------- | ---- | ------------- |
+| Read settings | `UserSettings` (`masterResumeFile`, `preferredCvName`) | Recommended Supabase table with RLS, or client-local preferences until table migration is implemented |
+| Update settings | partial `UserSettings` | Same RLS-scoped persistence mechanism |
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — settings included `gistUrl` and used `/api/user/settings`. NEW — there is no URL setting; settings retain only preferred filenames and should be persisted without the removed custom backend.
 
 ### Error Response Format
 
@@ -215,17 +226,19 @@ interface GistFile {
 
 | Concern | Implementation |
 | ------- | -------------- |
-| Token Storage | **Access token:** In-memory only (React context / Zustand). **Refresh token:** httpOnly, Secure, SameSite=Strict cookie (7 days TTL, 30 days if "Remember me" checked). |
-| Token TTL | Access token: 15 minutes. Refresh token: 7 days (default) / 30 days (remember me). |
-| Token Refresh | Automatic via Fetch interceptor, 5 minutes before expiry. |
-| Password Hashing | Server-side: Argon2id. Client-side: min 12 chars, 1 upper, 1 lower, 1 digit, 1 special. |
-| Rate Limiting | 5 attempts / 15 min / IP. After 3 failures: hCaptcha v2 invisible required. After 5 failures: 15-min lockout. |
-| Route Guards | `ProtectedRoute` wrapper — redirect to `/` (S000) if unauthenticated. |
-| Role-based UI | `usePermission()` hook — hide elements, not just disable. (Minimal implementation: check `user.role === 'admin'`). |
-| API Errors | 401 → clear auth state → redirect to `/`. |
-| **EXIT** | Client-side only. Show confirmation SMSG → `window.close()` or `about:blank`. **No server call. No cleanup. No pending transactions waited for.** Abort all in-flight requests via `AbortController`. |
-| **LOGOUT** | Client-side only. Show confirmation SMSG → clear JWT from Zustand → abort all requests → hard redirect to S000. **No `POST /api/auth/logout` server call.** Token expiry is handled by JWT TTL. |
-| **CANCEL** | Abort all `AbortController` signals → stop spinners. If no transactions running: reset all TVC01 nodes to `selected: true`, revert text edits. **Never navigates away from S002.** |
+| Token Storage | Supabase access + refresh tokens are managed by `supabase-js`. To preserve ADR-009 intent, configure a custom in-memory `Storage` adapter (or explicitly approved `sessionStorage`) rather than accepting default `localStorage`; use `createClient(url, key, { auth: { persistSession: true, storage: memoryStorage } })`. |
+| Token TTL / Refresh | Delegated to Supabase Auth (access + refresh issuance and rotation). App observes `getSession()` and `onAuthStateChange()` rather than implementing a Fetch refresh interceptor. |
+| Password Hashing | Delegated to Supabase Auth. The app never receives, stores, or hashes passwords beyond passing credentials to `signInWithPassword`; client format guidance remains a UX validation only. |
+| Rate Limiting / CAPTCHA | Delegated to Supabase Auth auth-endpoint controls. If project CAPTCHA is enabled, obtain hCaptcha/Turnstile token and pass it as `captchaToken`; UI can retain 3-failure CAPTCHA and 5-failure/15-min messages when project settings match. |
+| Route Guards | `ProtectedRoute` wrapper — redirect to `/` (S000) if the Supabase session is absent. |
+| Role-based UI | `usePermission()` hook — hide elements, not just disable. (Minimal implementation: claims/role mapping from Supabase user metadata.) |
+| Auth Errors | Map `AuthApiError` status/message. Invalid credentials → clear password/focus input; rate-limited → show the existing 15-minute user-facing message when configured. |
+| Storage Authorization | Storage bucket `Applai`, prefix `SuperCV`, is protected by RLS policies scoped to the authenticated user's JWT (or specifically approved shared access). |
+| **EXIT** | Client-side only. Show confirmation SMSG → `window.close()` or `about:blank`. **No server call. No cleanup. No pending transactions waited for.** Abort tracked requests best-effort. |
+| **LOGOUT** | Client-side only. Show confirmation SMSG → clear Zustand auth/session adapter → abort requests → hard redirect to S000. **Do not call `supabase.auth.signOut()` in the LOGOUT button flow** per ADR-014; ADR-017 records this deliberate tension. |
+| **CANCEL** | Abort tracked signals → stop spinners. Supabase SDK calls may not accept external `AbortSignal`; treat cancellation as best-effort/race the UI result. If no transaction runs: reset TVC01 nodes and revert edits. |
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — a custom server hashed passwords with Argon2id, issued JWTs, used an httpOnly refresh cookie, and enforced rate limits/CAPTCHA. NEW — Supabase Auth owns those server-side controls, while a custom session adapter avoids default localStorage token persistence.
 
 ## 8. State Management Strategy
 
@@ -299,8 +312,8 @@ export function abortAllRequests(): void {
 | ---- | ---- | --------------- | ------------ |
 | Unit | Vitest | 70% | Pure functions, utilities, store logic, Zod schemas |
 | Component | RTL + Vitest | Critical paths | S001 form validation, SMSG rendering, TVC01 node toggling |
-| Integration | RTL + Vitest | Key flows | Auth flow (S000 → S001 → S002), GIST load → export |
-| E2E | Playwright | Happy paths + critical errors | Full user journeys: login → load GIST → select nodes → export |
+| Integration | RTL + Vitest | Key flows | Auth flow (S000 → S001 → S002), Supabase Storage load → export |
+| E2E | Playwright | Happy paths + critical errors | Full user journeys: login → load SuperCV → select nodes → Storage export |
 
 ### Testing Rules:
 * Test behavior, not implementation
@@ -317,8 +330,8 @@ export function abortAllRequests(): void {
 | S002 | E2E | Session validation, TVC01 render, EXIT/LOGOUT/CANCEL confirmations |
 | TVC01 | Component + Unit | Node selection, collapse/expand, displayAll toggle, text editing |
 | S002D1 | Component | Filename validation, collision handling, cancel behavior, settings pre-fill |
-| S002D2 | Component + E2E | GIST URL validation, filename auto-populate, import success/failure, cancel behavior |
-| S002S1 | Component | Settings validation, dirty-check confirmation, save/cancel flows, URL pre-fill cascade |
+| S002D2 | Component + E2E | Storage file-list loading, filename selection, import success/failure, cancel behavior |
+| S002S1 | Component | Settings validation, dirty-check confirmation, save/cancel flows, preferred-filename pre-fill |
 | SMSG | Component | All 4 message types render correctly, auto-dismiss, focus trap, persistent confirmations |
 | EXIT button | E2E | Confirmation dialog, app termination, no cleanup, abort in-flight requests |
 | LOGOUT button | E2E | Confirmation dialog, JWT clear, redirect to S000, no server call |
@@ -332,17 +345,21 @@ export function abortAllRequests(): void {
 | Staging | Vercel | `staging.project.com` | `develop` branch |
 | Production | Vercel | `project.com` | `main` branch (manual approval) |
 
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — deployment implicitly required a second ASP.NET Core backend target. NEW — current MVP deployment is the Vite SPA plus Supabase project configuration; add a serverless deployment only for a future service-role-only feature.
+
 ## 12. Environment Variables
 
 | Variable | Required | Description | Example |
 | -------- | -------- | ----------- | ------- |
-| `VITE_API_URL` | Yes | Backend API base URL | `https://api.example.com/v1` |
 | `VITE_APP_NAME` | No | Display name | `"Applai Resume Generator"` |
-| `VITE_HCAPTCHA_SITEKEY` | Yes | hCaptcha site key | `10000000-ffff-ffff-ffff-000000000001` |
-| `VITE_DEFAULT_GIST_URL` | No | Fallback GIST URL for S002D2 pre-fill | `https://gist.github.com/...` |
+| `VITE_SUPABASE_URL` | Yes | Supabase project URL | `https://<your-project>.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Yes | Publishable Supabase anon key; safe in client when RLS is configured | `<anon-key>` |
+| `VITE_HCAPTCHA_SITEKEY` | Optional | hCaptcha site key only when Supabase CAPTCHA integration uses hCaptcha | `10000000-ffff-ffff-ffff-000000000001` |
 | `VITE_SENTRY_DSN` | No | Error tracking (optional) | `https://...@sentry.io/...` |
 
-**Rule**: Never commit `.env.local`. Use `.env.example` as template.
+**Rule**: Never commit `.env.local`. Use `.env.example` as template. The Supabase **service role** key must never be a `VITE_` variable or otherwise shipped to the client.
+
+> **UPDATED 2026-08-17 (Supabase migration):** OLD — `VITE_API_URL` and `VITE_DEFAULT_GIST_URL` configured a custom backend and user-configurable GIST. NEW — required `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` configure direct Auth/Storage access to fixed `Applai/SuperCV`.
 
 > **Note:** `VITE_SENTRY_DSN` is optional. If used, add `@sentry/react` to dependencies per BOUNDARIES.md approval process.
 
@@ -353,8 +370,8 @@ export function abortAllRequests(): void {
 default-src 'self';
 script-src 'self';
 style-src 'self';
-connect-src 'self' /api https://api.hcaptcha.com https://hcaptcha.com;
-img-src 'self' data:;
+connect-src 'self' https://*.supabase.co https://api.hcaptcha.com https://hcaptcha.com;
+img-src 'self' data: https://*.supabase.co;
 font-src 'self';
 frame-src https://newassets.hcaptcha.com;
 ```
@@ -378,9 +395,10 @@ frame-src https://newassets.hcaptcha.com;
 | 2026-08-14 | Memory-only JWT + httpOnly refresh cookie | Security (XSS protection) | localStorage: vulnerable to XSS theft |
 | 2026-08-14 | hCaptcha over reCAPTCHA | Privacy (GDPR-friendly) | reCAPTCHA: heavier tracking footprint |
 | 2026-08-15 | EXIT / LOGOUT / CANCEL instead of single Logout button | Clear separation of concerns: terminate app vs clear session vs reset state | Single Logout button: ambiguous behavior, violates BOUNDARIES.md destructive action clarity |
-| 2026-08-15 | S002S1 Settings Panel | Centralized user preferences for GIST URL, filename defaults | Scattered env vars and hardcoded defaults: error-prone, poor UX |
-| 2026-08-15 | S002D2 Import Dialog | Explicit GIST URL + filename selection vs implicit auto-load | Auto-load without user confirmation: error-prone, violates VISION.md "asked for URL" |
-| 2026-08-15 | Client-side LOGOUT only (no server call) | Simplicity + speed. JWT TTL handles server-side expiry. Server logout endpoint kept for future use. | Server-side logout: adds latency, unnecessary for SPA session model |
+| 2026-08-15 | S002S1 Settings Panel | Centralized filename preferences | Scattered defaults: error-prone, poor UX |
+| 2026-08-17 | Supabase BaaS for Auth + Storage | Direct Auth/Storage SDK calls under RLS remove the custom backend and GIST proxy requirement (ADR-017) | Custom ASP.NET backend: unnecessary for current MVP; service-role function only if a future privileged feature requires it |
+| 2026-08-15 / 2026-08-17 | S002D2 Import Dialog | Explicit SuperCV file selection from fixed `Applai/SuperCV` vs implicit auto-load | Auto-load without user confirmation: error-prone; URL entry removed by ADR-017 |
+| 2026-08-15 / 2026-08-17 | Client-side LOGOUT only (no provider call) | Simplicity + speed. Supabase session expiry is provider-managed; `signOut()` is reserved for an explicit future revocation decision. | Provider logout: adds latency and changes ADR-014's local-clear model |
 | 2026-08-15 | AbortController for all requests | Enables instant cancellation for EXIT/LOGOUT/CANCEL without waiting for pending transactions | Axios cancel tokens: requires extra dependency (Axios is forbidden by BOUNDARIES.md) |
 
 ---
