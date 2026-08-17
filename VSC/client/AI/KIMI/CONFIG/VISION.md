@@ -6,7 +6,7 @@ Compile a job-offer specific Resumee.md and CoverLetter.md from a given in GIT h
 ### Scope of MVP version
 For a first MVP we are just loading the MasterResume.json from a GIST (a user can configure its URL in the settings), modify it and save the such modified Resume back to the GIST under a new name such as "myGeneratedCV.json". 
 
-The core component is displayin the loaded JSON file in an editable and collapsible TreeView where Nodes can be selected/deselected for include them in or exclude them from the new to be generated "myGeneratedCV.json". 
+The core component is displayed in the loaded JSON file in an editable and collapsible TreeView where Nodes can be selected/deselected for include them in or exclude them from the new to be generated "myGeneratedCV.json". 
 
 ## 2. Target Audience
 | Segment   | Description | Tech Savviness         | Primary Device             |

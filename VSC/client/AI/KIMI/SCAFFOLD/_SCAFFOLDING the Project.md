@@ -1,5 +1,7 @@
 # Scaffolding this Project for VS Code, React, etc. 
 
+* [How to Code with Kimi](../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/How%20to%20Code%20with%20Kimi.md)
+
 * -> **[AI Scaffolding explained](../../../../../../../../../WORK/ENTITY/AI/SETUP/Scaffolding/AI_Scaffolding.md)**
 
 * **[scaffold.zip](scaffold.zip)**: The AI generated ZIP that unpacks into the "VSC\client\"-folder.
@@ -57,9 +59,12 @@ Then you just execute the following bash from within the VSC/client folder to un
 
 2. npm run typecheck   # Should pass (0 errors)
 
-3. npm run dev         # Opens http://localhost:3000
+3. npm run dev         # Opens http://localhost:3000 and displays the following screen: 
 
-Open VSC and launch debugger with F5
+    ![Empty Screen After Scaffolding](./zPIC/EmptyScreenAfterScaffolding.png)
+
+4. Open VSC and launch debugger with F5
+
 ```
 
 
