@@ -48,8 +48,9 @@
 ## Blockers & Open Questions
 
 1. No backend exists yet (ADR-011: ASP.NET Core 9 Minimal API). Login, GIST import/export, and Settings cannot be exercised end-to-end until it's built.
-2. Repo cleanliness: `VSC/client/` currently contains **three parallel copies** of the scaffold — loose files directly under `VSC/client/`, `VSC/client/scaffold/`, and the canonical `VSC/client/SRC/` (per TECH.md/BOUNDARIES.md, `SRC/` is the only sanctioned vibecoding target). The other two look like leftovers from earlier scaffold.zip unpacking attempts and should probably be deleted, but were left untouched pending confirmation since they might be intentional backups.
-3. No `CHANGELOG.md` exists yet, though BOUNDARIES.md §8 references one.
+2. No `CHANGELOG.md` exists yet, though BOUNDARIES.md §8 references one.
+
+**Resolved this session:** Repo cleanliness — `VSC/client/` had three parallel copies of the scaffold (loose files directly under `VSC/client/`, `VSC/client/scaffold/`, and the canonical `VSC/client/SRC/`). Confirmed via diff that the two duplicates were strictly older/superseded with nothing unique, then removed both. `VSC/client/` now matches TECH.md §2's structure exactly.
 
 ---
 
@@ -57,9 +58,8 @@
 
 1. [ ] Build the ASP.NET Core 9 Minimal API backend per TECH.md §6's contract (ADR-011).
 2. [ ] Write unit/component tests for TVC01 selection+virtualization and the login form (TECH.md §10).
-3. [ ] Confirm with the user whether the duplicate scaffold copies (`VSC/client/scaffold/`, loose `VSC/client/*`) can be removed.
-4. [ ] Add `CHANGELOG.md` and start logging entries per BOUNDARIES.md §8.
-5. [ ] Playwright E2E happy-path (login → import → select nodes → export) once the backend exists.
+3. [ ] Add `CHANGELOG.md` and start logging entries per BOUNDARIES.md §8.
+4. [ ] Playwright E2E happy-path (login → import → select nodes → export) once the backend exists.
 
 ---
 
@@ -75,7 +75,8 @@
 | Date | Focus | Key Commits | Blockers Resolved |
 |------|-------|--------------|--------------------|
 | 2026-08-17 | Reconciled DECISIONS.md/PATTERNS.md with SPEC.md/TECH.md | `046593f` | ADR-007/backend contradiction, PATTERNS.md LOGOUT server-call bug, missing EXIT/CANCEL/Import/Settings patterns |
-| 2026-08-17 | Vibecoded Phases 1–5 on the existing scaffold | *(pending)* | src/SRC case-sensitivity bug, missing shadcn/ui primitives, missing AbortController wiring, non-global SMSG, missing gistUrl param, no ESLint config |
+| 2026-08-17 | Vibecoded Phases 1–5 on the existing scaffold | `ff3ce1a` | src/SRC case-sensitivity bug, missing shadcn/ui primitives, missing AbortController wiring, non-global SMSG, missing gistUrl param, no ESLint config |
+| 2026-08-17 | Removed duplicate scaffold copies | `a25ffe1` | Repo cleanliness — `VSC/client/` now matches TECH.md §2 exactly |
 
 ---
 
