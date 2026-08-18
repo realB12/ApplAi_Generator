@@ -2,6 +2,10 @@
 
 * **[ApplaiGenerator Project Log](../../01%20DASHBOARD/PRJ-LOG/_FlClicker_Project_Log.md)**
 
+* **[BACKLOG](../BACKLOG/_ApplAI%20BACKLOG.md)**
+
+----
+
 This Log-folder for DEVELOPERS describes all the **changes made to the source-code** and therefore documents 
 * developer goals, 
 * architecural decisions
@@ -27,3 +31,6 @@ All the logfiles will contain links to project artefacts and vice versa. Therefo
 
 ## Mind the Scope!
 Everything what is PROJECT management realted, such as new or modified specifications, requirements, decisions made, milestones, planning etc. is logged in the [ApplaiGenerator's Project Logs](../../01%20DASHBOARD/PRJ-LOG/_FlClicker_Project_Log.md) in a similar file-structure within the [Project Dashboard folder](../../01%20DASHBOARD/_Project%20Dashboard.md)
+
+## Backlog
+The **[BACKLOG](../BACKLOG/_ApplAI%20BACKLOG.md)** contains a numbered list of issues, features etc. which are **currently NOT addressed but might be realised in the future**. 
