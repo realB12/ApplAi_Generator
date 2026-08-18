@@ -15,11 +15,7 @@ The app has no self-registration screen by design (S001 is login-only) and so th
 
 Go to your Supabase **Dashboard → Authentication → Users → Add user**, and create an email/password **account for a TestUser there (for the effektively created credentials see -> [SupaBase Konto](../../../../../../../../PRIV/_KEY/Assets/Services/S/SupaBase/_SupaBase_Konto.md) for the "TestUser"-section. (Note that such credentials must neither be shared in documentation nor on GitHub!)
 
-In your LOCAL project files create a local "VSC/client/src/.env.local" named file. 
-
-<span style="color:red; font-weight:bold">ACHTUNG</span>: **make it gitignored** because it must never be commited to the public remote Github Repo for obvious security reasons. 
-
-Herein set VITE_SUPABASE_ANON_KEY and VITE_SUPABASE_ANON_KEY environment variables as follows:
+In your LOCAL project files create a local ".env.local" named file in the "VSC/client/src/" rootfolder to contain the follwing two environment variables.
 
 ```plaintext
 VITE_SUPABASE_URL=https://tascuxigwgedjrztwemj.supabase.co
@@ -27,7 +23,9 @@ VITE_SUPABASE_URL=https://tascuxigwgedjrztwemj.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRhc2N1eGlnd2dlZGpyenR3ZW1qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzU0MTMsImV4cCI6MjEwMjU1MTQxM30.LC2dV30FtxlZFbGIo7xP34ajGZFlSwC2OOWJ0VIRtzE
 ```
 
-Note: this anon key is a publishable, non-secret key by design and is therefore safe when kept in the compiled client binary.
+<span style="color:red; font-weight:bold">ACHTUNG</span>: **Then make this ".env.local" file  gitignored** because it must never be commited to the public remote Github Repo for obvious security reasons!
+
+Note here that the such created anon key is a publishable, non-secret key by design and is therefore safe when kept in the compiled client binary.
 
 ### Object Creation
 The App required two different object
