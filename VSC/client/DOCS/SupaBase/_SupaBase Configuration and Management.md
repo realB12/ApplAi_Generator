@@ -1,5 +1,7 @@
 # SupaBase Configuration and Management
 
+* [SupaBase **Konto**](../../../../../../../../PRIV/_KEY/Assets/Services/S/SupaBase/_SupaBase_Konto.md)
+
 ## Context
 We have chosen **[SupaBase](../../../../../../../../PRIV/_KEY/Assets/Services/S/SupaBase/_SupaBase_Konto.md)** for both
 
@@ -9,8 +11,12 @@ We have chosen **[SupaBase](../../../../../../../../PRIV/_KEY/Assets/Services/S/
 
 ## SupaBase Configuration
 
+### 1. Uploading SuperCV.json
+1. Export a most complete CV from [Reactive Resume](../../../../../../../../JobSuche/06_TOOLS/R/Reactive%20Resume/_Reactive%20Resume.md) and name it **supercv.json** (Alternatively you may find a supercv.json reference file in the *VSC\data\SuperCV\supercv.json*-folder).
 
-### Creating a TestUser Account
+2. Upload this SuperCV.json file to SupaBase's "SuperCV" folder in the "Applai" basket.  
+
+### 2. Creating a TestUser Account
 The app has no self-registration screen by design (S001 is login-only) and so the **auth.users table is currently empty**. 
 
 Go to your Supabase **Dashboard → Authentication → Users → Add user**, and create an email/password **account for a TestUser there (for the effektively created credentials see -> [SupaBase Konto](../../../../../../../../PRIV/_KEY/Assets/Services/S/SupaBase/_SupaBase_Konto.md) for the "TestUser"-section. (Note that such credentials must neither be shared in documentation nor on GitHub!)
