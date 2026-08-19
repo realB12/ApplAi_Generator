@@ -46,16 +46,15 @@ Added a central **config/testmode.ts module** implementing the three-layer TestM
 
 Wired auth-prefill into LoginPopup.tsx (dynamic-imported placeholder fixture) and verbose debug logging into apiErrorHandler.ts via a new leveled logger.ts. tsc --noEmit, eslint, and npm run build all pass cleanly.
 
-## Mandatory Verification Steps YOU have to Do AFTER the Change got implemented
+## Mandatory Configuratoin BEFORE Testing
 1. Copy the additional TestMode setting from the VibAugmented *.env.example* to your untouched *.env.local* and populate UserMail and PW with Authentication values you have setup in teh Supabase. (done)  
 
-2. For running the Application in TestMode you have to run it now with the "dev" parameter such as:   
+## Starting the App in Testmode
+2. For running the Application in TestMode you have to npm-run it now from the /src folde with the "dev" parameter such as:   
   
     > **npm run dev**
 
-from the /src folder. You have to adapt this in the .vscode (done)
-
-3. Open http://localhost:3000/?test=1 — the login form should prefill automatically. 
+3. Then try http://localhost:3000/?test=1 — the login form should prefill automatically. 
 4. Without ?test=1 (or VITE_TESTMODE=yes), fields stay empty. 
 
 Remember: In a production build, TestMode can't be enabled even with the URL param. This was built on purpose.
