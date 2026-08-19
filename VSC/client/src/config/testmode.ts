@@ -1,7 +1,11 @@
 // TestMode — single source of truth (DEV_GUIDES/Architecture/TestMode-Concept.md).
-// Implements CR002 (CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md).
+// Implements CR002 (CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md)
+// and CR003 (CHANGES/REQUESTS/CR000/CR003-Adding_default_Login_Credentials_to_.env.local.md).
 //
-// Layer 0 (hard gate):   TestMode is structurally IMPOSSIBLE in production builds.
+// Layer 0 (hard gate):   TestMode is structurally IMPOSSIBLE in production builds,
+//                        AND requires VITE_TEST_USER_MAIL + VITE_TEST_USER_PW to be
+//                        set in .env.local (CR003) — missing either forces TestMode
+//                        fully off, as if VITE_TESTMODE=no.
 // Layer 1 (default):     .env.local VITE_TEST* variables set the local-dev default.
 // Layer 2 (override):    "?test=1" URL param, then localStorage("testmode"), win over Layer 1.
 //
@@ -13,8 +17,15 @@
 // the Concept doc (which also supports CRA/Next.js — not applicable here).
 const IS_DEV_BUILD: boolean = import.meta.env.DEV;
 
+// CR003 hard gate: S001 login prefill must come from .env.local, never be
+// hardcoded. If either credential is missing/empty, TestMode cannot be
+// enabled at all (Layer 2 overrides like ?test=1 cannot bypass this).
+const HAS_TEST_CREDENTIALS: boolean = Boolean(
+  import.meta.env.VITE_TEST_USER_MAIL && import.meta.env.VITE_TEST_USER_PW,
+);
+
 function resolveTestMode(): boolean {
-  if (!IS_DEV_BUILD) return false; // hard gate — prod can never enter test mode
+  if (!IS_DEV_BUILD || !HAS_TEST_CREDENTIALS) return false; // hard gate — prod, or missing CR003 credentials, can never enter test mode
   const url = new URLSearchParams(window.location.search);
   if (url.has('test')) return url.get('test') === '1'; // ?test=1
   const stored = window.localStorage.getItem('testmode'); // persists across reloads
