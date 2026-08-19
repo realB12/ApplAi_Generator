@@ -7,10 +7,22 @@
 > **Reactive Resume schema-mapping pass (2026-08-17):** TECH.md, SPEC.md, and PATTERNS.md were updated to replace the generic `MasterCVNode` tree with the real Reactive Resume `SuperCVDocument` schema (DECISIONS.md ADR-018) confirmed against `VSC/data/SuperCV/supercv.json`.
 >
 > **Source migration pass (2026-08-17, later same day):** `src/` has now been updated to match both passes above — Supabase Auth/Storage AND `SuperCVDocument`. See "What Was Done Last Session" below for the file-by-file change list.
+>
+> **TestMode pass (2026-08-19):** Implemented CR002 (`CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md`) per `DEV_GUIDES/Architecture/TestMode-Concept.md`. See "Current Session" below.
 
 ---
 
 ## Current Session
+
+**Date:** 2026-08-19
+**Branch:** `feature/CR002-testmode`
+**Focus:** Implemented CR002's TestMode core principle: a central `config/testmode.ts` flag module (Layer 0 prod hard-gate + Layer 1 `.env.local` default + Layer 2 `?test=1`/localStorage override), `config/testFixtures.ts` (dynamic-imported auth-prefill placeholder), and `utils/logger.ts` (leveled logger). Wired auth-prefill into `LoginPopup.tsx` and verbose debug logging into `apiErrorHandler.ts`. The Debug Panel UI (Concept Design Rule 5) was explicitly deferred per user decision — `test.debugPanel` exists as a flag only, no component yet. `npx tsc --noEmit` and `npx eslint` both pass with 0 errors on the touched files.
+
+> **UPDATED 2026-08-19 (TestMode):** OLD — the app had no concept of TestMode; all auth/logging behavior was identical between dev and prod. NEW — `config/testmode.ts` is the single source of truth consumed by `LoginPopup.tsx` (auth-prefill) and `apiErrorHandler.ts` (verbose logging); `PATTERNS.md` P18 documents the pattern.
+
+---
+
+## Previous Session
 
 **Date:** 2026-08-17
 **Branch:** `feature/F-01-client-scaffold`
