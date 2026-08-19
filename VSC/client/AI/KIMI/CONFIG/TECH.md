@@ -440,6 +440,8 @@ export function abortAllRequests(): void {
 | `VITE_TEST_LOG_LEVEL` | No | Minimum level emitted by `utils/logger.ts` in TestMode | `debug` |
 | `VITE_TEST_AUTH_PREFILL` | No | Whether S001 prefills from `config/testFixtures.ts` in TestMode | `yes` |
 | `VITE_TEST_DEBUG_PANEL` | No | Reserved for the deferred Debug Panel UI (flag only — no component yet) | `yes` |
+| `VITE_TEST_USER_MAIL` | No (required for TestMode) | S001 default login email in TestMode, read by `config/testFixtures.ts`; must match a real Supabase user (CR003) | `tester@example.com` |
+| `VITE_TEST_USER_PW` | No (required for TestMode) | S001 default login password in TestMode, read by `config/testFixtures.ts` (CR003) | `Test1234567!` |
 
 **Rule**: Never commit `.env.local`. Use `.env.example` as template. The Supabase **service role** key must never be a `VITE_` variable or otherwise shipped to the client.
 
@@ -448,6 +450,8 @@ export function abortAllRequests(): void {
 > **Note:** `VITE_SENTRY_DSN` is optional. If used, add `@sentry/react` to dependencies per BOUNDARIES.md approval process.
 
 > **UPDATED 2026-08-19 (TestMode):** Added `VITE_TESTMODE`/`VITE_TEST_LOG_LEVEL`/`VITE_TEST_AUTH_PREFILL`/`VITE_TEST_DEBUG_PANEL`. All four are structurally inert outside dev builds — `config/testmode.ts`'s Layer 0 gate reads `import.meta.env.DEV`, not these variables, to decide whether TestMode can run at all (ADR-019).
+>
+> **UPDATED 2026-08-19 (CR003):** Added `VITE_TEST_USER_MAIL`/`VITE_TEST_USER_PW`. `config/testFixtures.ts` no longer hardcodes S001's TestMode login prefill — it reads these two variables instead. `config/testmode.ts`'s Layer 0 gate now also requires both to be non-empty; if either is missing, `test.enabled` resolves to `false` exactly as if `VITE_TESTMODE=no` (Layer 2 overrides like `?test=1` cannot bypass this), so the S001 fields stay empty.
 
 ## 13. Security Configuration
 

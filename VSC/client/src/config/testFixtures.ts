@@ -3,18 +3,19 @@
 // always `await import('@/config/testFixtures')` behind a `test.enabled` check
 // so bundlers can tree-shake it out of the production bundle.
 //
-// Placeholder credentials only. This project authenticates through Supabase
-// Auth (lib/supabase.ts), so signing in with these still requires a REAL user
-// to exist in your Supabase project — create one with this exact email and
-// password (or edit the values below to match a test account you already
-// have). The password is 13 characters to satisfy LoginPopup's 12-character
-// Zod minimum.
+// UPDATED 2026-08-19 (CR003): No more hardcoded credentials. VITE_TEST_USER_MAIL
+// and VITE_TEST_USER_PW are read straight from .env.local. This project
+// authenticates through Supabase Auth (lib/supabase.ts), so signing in still
+// requires a REAL user matching these values to exist in your Supabase
+// project. config/testmode.ts's Layer 0 gate already guarantees `test.enabled`
+// is false whenever either variable is missing/empty, so this module is only
+// ever imported when both are present — no fallback handling needed here.
 export interface AuthPrefill {
   email: string;
   password: string;
 }
 
 export const authPrefill: AuthPrefill = {
-  email: 'tester@example.com',
-  password: 'Test1234567!',
+  email: import.meta.env.VITE_TEST_USER_MAIL,
+  password: import.meta.env.VITE_TEST_USER_PW,
 };
