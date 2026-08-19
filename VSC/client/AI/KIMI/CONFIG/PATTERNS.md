@@ -1369,4 +1369,68 @@ export function useSaveSettings() { const queryClient = useQueryClient(); return
 
 ---
 
+## P18 — TestMode Pattern
+
+> Added 2026-08-19 to implement CR002 (`CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md`), per the concept in `DEV_GUIDES/Architecture/TestMode-Concept.md`. The Debug Panel UI component described by the Concept's Design Rule 5 is intentionally **deferred** — only the central flag module, fixtures, and logger are implemented by this pass; `test.debugPanel` exists as a stable flag for that follow-up.
+
+```typescript
+// config/testmode.ts — single source of truth; never scatter
+// `import.meta.env.VITE_TESTMODE` checks elsewhere in the codebase.
+const IS_DEV_BUILD: boolean = import.meta.env.DEV; // Layer 0 hard gate
+
+function resolveTestMode(): boolean {
+  if (!IS_DEV_BUILD) return false;
+  const url = new URLSearchParams(window.location.search);
+  if (url.has('test')) return url.get('test') === '1';      // Layer 2: ?test=1
+  const stored = window.localStorage.getItem('testmode');
+  if (stored !== null) return stored === '1';                // Layer 2: localStorage
+  return import.meta.env.VITE_TESTMODE === 'yes';            // Layer 1: .env.local
+}
+
+export const test: TestModeConfig = {
+  enabled: resolveTestMode(),
+  authPrefill: flag(import.meta.env.VITE_TEST_AUTH_PREFILL, true),
+  debugPanel: flag(import.meta.env.VITE_TEST_DEBUG_PANEL, true), // flag only — panel UI deferred
+  logLevel: resolveLogLevel(),
+};
+```
+
+```typescript
+// config/testFixtures.ts — dynamic-imported only, never statically, so
+// bundlers tree-shake it out of production.
+export const authPrefill = { email: 'tester@example.com', password: 'Test1234567!' };
+```
+
+```typescript
+// features/auth/components/LoginPopup.tsx — applied via react-hook-form's
+// reset(), not the Concept's illustrative form.fill().
+useEffect(() => {
+  if (!test.enabled || !test.authPrefill) return;
+  let cancelled = false;
+  void (async () => {
+    const { authPrefill } = await import('@/config/testFixtures');
+    if (!cancelled) reset({ email: authPrefill.email, password: authPrefill.password, rememberMe: false });
+  })();
+  return () => { cancelled = true; };
+}, [reset]);
+```
+
+```typescript
+// utils/logger.ts — leveled logger driven by test.logLevel; outside TestMode
+// the threshold is forced to 'warn' regardless of any stray .env value.
+const threshold = LEVELS[test.enabled ? test.logLevel : 'warn'];
+export const log = {
+  debug: (...args: unknown[]) => emit('debug', '[DBG]', args),
+  info:  (...args: unknown[]) => emit('info', '[INF]', args),
+  warn:  (...args: unknown[]) => emit('warn', '[WARN]', args),
+  error: (...args: unknown[]) => emit('error', '[ERR]', args),
+};
+```
+
+**Usage in `lib/apiErrorHandler.ts` (P08):** `if (test.enabled) log.debug('[apiErrorHandler]', error);` runs before the existing `show()` calls — additional diagnostics only, the production message contract is unchanged.
+
+**Env vars (optional, dev-only):** `VITE_TESTMODE`, `VITE_TEST_LOG_LEVEL`, `VITE_TEST_AUTH_PREFILL`, `VITE_TEST_DEBUG_PANEL` — documented in `.env.example`; real values belong only in the user's own gitignored `.env.local`.
+
+---
+
 **End of Patterns**
