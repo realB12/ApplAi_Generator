@@ -7,6 +7,31 @@
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. ADR-017 supersedes ADR-011 while preserving its historical record; see inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
 >
 > **Reactive Resume schema-mapping pass (2026-08-17):** This revision adds ADR-018, which replaces the generic, app-invented `MasterCVNode` tree with the actual Reactive Resume export schema (`SuperCVDocument`, TECH.md §5/§5a), confirmed against the real sample file at `VSC/data/SuperCV/supercv.json`. ADR-008 (Custom TreeView) is amended, not superseded, since the decision to build a custom component still stands — only what that component renders has changed.
+>
+> **TestMode pass (2026-08-19):** This revision adds ADR-019, recording the CR002 TestMode implementation (`CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md`, `DEV_GUIDES/Architecture/TestMode-Concept.md`). Added with the user's explicit approval per this file's own AI-change restriction (see intro above) and BOUNDARIES.md §8.
+
+---
+
+## ADR-019: Centralized TestMode Module with a Hard Production Gate
+
+**Status:** Accepted
+**Date:** 2026-08-19
+**Context:** CR002 (`CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md`) requires a way to switch the app into a TestMode for live end-user testing — prefilling auth input, showing more verbose diagnostics — while guaranteeing TestMode can **never** reach production, and without scattering `if (import.meta.env.VITE_TESTMODE)` checks across the codebase (`DEV_GUIDES/Architecture/TestMode-Concept.md`, "Security" and "Design Rules §1"). The project is Vite-only (TECH.md §1), so the resolution mechanism can rely on Vite's native `import.meta.env.DEV` rather than the Concept doc's multi-tool (CRA/Next.js) fallback sample.
+
+**Decision:** Add `src/config/testmode.ts` as the single source of truth, exporting one `test` object resolved through three layers: **Layer 0** (hard gate) — `IS_DEV_BUILD = import.meta.env.DEV`; if false, every flag is forced `false`/`'warn'`, full stop. **Layer 1** (default) — optional `VITE_TESTMODE`/`VITE_TEST_AUTH_PREFILL`/`VITE_TEST_DEBUG_PANEL`/`VITE_TEST_LOG_LEVEL` in the user's own gitignored `.env.local` (documented, not set, in `.env.example`). **Layer 2** (override) — `?test=1` URL param, then `localStorage.getItem('testmode')`, both only consulted when Layer 0 already passed. Two features consume `test` directly: `features/auth/components/LoginPopup.tsx` dynamic-imports `config/testFixtures.ts` and calls react-hook-form's `reset()` when `test.enabled && test.authPrefill`; `lib/apiErrorHandler.ts` calls the new `utils/logger.ts`'s `log.debug()` when `test.enabled`, without changing its existing `show()` message contract. The Debug Panel UI (Concept "Design Rules §5") is deferred to a follow-up CR; `test.debugPanel` exists now only as a stable flag for that future component to consume.
+
+**Consequences:**
+- ✅ TestMode is structurally impossible in a production build — the Layer 0 gate short-circuits before any URL param, localStorage, or env value is even read
+- ✅ One import (`import { test } from '@/config/testmode'`) everywhere TestMode-aware behavior is needed — no parallel scattered checks to keep in sync
+- ✅ `config/testFixtures.ts` is only ever reached via dynamic `import()` behind a runtime-false-in-prod check, so it is never eagerly bundled into the initial production chunk
+- ⚠️ Vite/Rollup still emits `testFixtures` as its own small (~0.14 kB) lazy chunk file in the `dist/` output, even though it is never fetched at runtime in production; full removal from build output would require additional build-time dead-code configuration, deferred as out of CR002's scope
+- ⚠️ The auth-prefill fixture (`tester@example.com` / `Test1234567!`) is a placeholder — it only lets a real login succeed if a matching user exists in the project's Supabase Auth, which is an operational step outside this codebase
+- ❌ No Debug Panel UI yet — the "display additional information" and "internal messaging" parts of CR002's Context & Goal are only partially satisfied (via `apiErrorHandler.ts`'s verbose logging), pending the deferred follow-up
+
+**Alternatives considered:**
+- Per-call-site `if (import.meta.env.VITE_TESTMODE === 'yes')` checks wherever needed: rejected — exactly the scattering the Concept doc warns against, and harder to audit for the "never reaches production" security requirement
+- Reading `process.env.NODE_ENV` (the Concept doc's multi-tool sample) instead of `import.meta.env.DEV`: rejected — this project is Vite-only (TECH.md §1), so the native Vite flag is simpler and equally reliable
+- Building the Debug Panel UI now as part of the same change: deferred to a follow-up CR per explicit user decision during this session, to keep this change minimally invasive
 
 ---
 
