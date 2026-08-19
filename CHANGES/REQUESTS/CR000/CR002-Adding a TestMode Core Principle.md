@@ -39,25 +39,29 @@ This prompt was executed August 19th, 2026.
 
 ----
 
-
-
 # Implementation RESULTS & IMPACT
-The follwing Files/Folders are relevant to TestMode implementation:  
 
 ## Change Summary
 Added a central **config/testmode.ts module** implementing the three-layer TestMode gate (production hard-gate → .env.local default → ?test=1/localStorage override) with granular sub-flags. 
 
 Wired auth-prefill into LoginPopup.tsx (dynamic-imported placeholder fixture) and verbose debug logging into apiErrorHandler.ts via a new leveled logger.ts. tsc --noEmit, eslint, and npm run build all pass cleanly.
 
-## Verification Steps
-1. Copy the additional TestMode setting from the VibAugmented *.env.example* to your untouched *.env.local* and populate UserMail and PW with Authentication values you have setup in teh Supabase.
-2. Before testing, run run *npm run dev*, 
+## Mandatory Verification Steps YOU have to Do AFTER the Change got implemented
+1. Copy the additional TestMode setting from the VibAugmented *.env.example* to your untouched *.env.local* and populate UserMail and PW with Authentication values you have setup in teh Supabase. (done)  
+
+2. For running the Application in TestMode you have to run it now with the "dev" parameter such as:   
+  
+    > **npm run dev**
+
+from the /src folder. You have to adapt this in the .vscode (done)
+
 3. Open http://localhost:3000/?test=1 — the login form should prefill automatically. 
 4. Without ?test=1 (or VITE_TESTMODE=yes), fields stay empty. 
 
 Remember: In a production build, TestMode can't be enabled even with the URL param. This was built on purpose.
 
 ## NEW Files added to the structure
+The follwing **Files/Folders are relevant to TestMode implementation:**  
 
 * src/features/auth/components/**LoginPopup.tsx**: Prefill form via reset() when TestMode + authPrefill are on
 
