@@ -1,5 +1,5 @@
 # TestMode Concept
-new
+
 -> implemented through [CR002-Adding a TestMode Core Principle](../../CHANGES/REQUESTS/CR000/CR002-Adding%20a%20TestMode%20Core%20Principle.md)
 
 ## The Need

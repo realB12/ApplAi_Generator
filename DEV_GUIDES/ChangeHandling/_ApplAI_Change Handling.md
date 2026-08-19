@@ -6,7 +6,7 @@
 
 ---
 
-This document outlines **how AI-driven Change is handled for the Applai WebApp**. 
+This document outlines **how AI-driven Change-Requests are handled for the Applai WebApp**. 
 
 The goal here is, that change requests and the rules for implementing such change requests do not remain undocumented and are not inconsistently AI-prompted over and over again putting everyting what already runs at risk. 
 
@@ -55,10 +55,13 @@ Prompts are normally DRAFTED in the formal [CRnnn-my Change](../../CHANGES/REQUE
 
 However the final request is pasted into a new Prompt-File in the [AI Prompts](../../VSC/client/AI/KIMI/PROMPTs/_AI%20Prompts.md) folder. 
 
-From here it will be 1:1 copied to the AI prompt of your choice and executes. All feedback will be saved in the Promt-File as well from where a summary is then compile for the [CRnnn-German Case Title](../../CHANGES/REQUESTS/TEMPLATES/CRnnn-German%20Case%20Title.md) formal CR file and the status will be updated in the [ChangeList](../../CHANGES/_ChangeList.md)
+From here it will be 1:1 copied to the AI prompt of your choice and executes.
+
+All feedback will be saved in the original Promt-File as well. From there a summary is then compile for the [CRnnn-German Case Title](../../CHANGES/REQUESTS/TEMPLATES/CRnnn-German%20Case%20Title.md) formal CR file and the status will be updated in the [ChangeList](../../CHANGES/_ChangeList.md)
 
 ### General Remarks
-Not every issue leads to vibecoding and prompt. 
-And some issues are not technical. Financial, legal, etc. issues will be handled outside the scope of the technical project by the project's enclosing "Business" section. 
+1. Not every issue leads to vibecoding and prompt. 
+
+2. Some issues are not technical. Financial, legal, etc. issues will be handled outside the scope of the technical project by the project's enclosing "Business" section. 
 
 

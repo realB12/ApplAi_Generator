@@ -12,7 +12,7 @@
 
 <- inspired by DEVLOGS [Change 260818](../../../DEV_LOGs/2608/Change_260818.md) file
 
-* implements the [TestMode Concept](../../../DEV_GUIDEs/Architecture/TestMode-Concept.md)
+* [TestMode Concept](../../../DEV_GUIDEs/Architecture/TestMode-Concept.md) this CR is meant to implement
 
 
 ---
@@ -25,11 +25,11 @@ For efficiently live end-user testing and maintaining I should be able to switch
 ## 2. Current State
 Currently the app does not understand TestMode and does not provide any TestFeatures. 
 
-I have draftet a TestMode Implementation concept you must get from my GitHub Repo as "DEV_GUIDEs/Architecture/TestMode-Concept.md" and read it as a specification for implmenting this change.
+I have draftet a TestMode Implementation concept you must get from my GitHub Repo on https://github.com/realB12/ApplAi_Generator/blob/main/DEV_GUIDES/Architecture/TestMode-Concept.md and read it as a specification for implmenting this change.
 
 ## 3. Desired State
-Have the [TestMode Concept](../../../DEV_GUIDEs/Architecture/TestMode-Concept.md) full implemented
+Have the [TestMode Concept](https://github.com/realB12/ApplAi_Generator/blob/main/DEV_GUIDES/Architecture/TestMode-Concept.md) fully implemented. 
 
 4. ACTION
-1. Load and Read the Test-Mode Concept from 
+
 

@@ -9,20 +9,32 @@
 
 
 ### Purpose of this CR file
-This Change Request is the Basis for the Change-Prompt (located in the [_AI Prompts](../../../VSC/client/AI/KIMI/PROMPTs/_AI%20Prompts.md)) that finally implements the here-in requested change, followed by updating the context-files, this CR-file and eventually logfiles such as the CR Status in the [ChangeList](../../_ChangeList.md). 
+This Change Request File is the Basis for the Change-Prompt (located in the [_AI Prompts](../../../VSC/client/AI/KIMI/PROMPTs/_AI%20Prompts.md)) that finally implements the here-in requested change, followed by updating the context-files, this CR-file and eventually logfiles such as the CR Status in the [ChangeList](../../_ChangeList.md). 
 
 ### Naming Conventions
-The filename follows the convention [CR-nnn-YYMMDD-German Case Title] where 
+The filename follows the convention [CRnnn-German Case Title] where 
 * **nnn** is a sequence number starting with 001, followed by 002, ...
-* **German Case Title** means that all nouns start with a Capital letters and all other word with lowercase. 
+* **German Case Title** means, that all nouns in the Titel start with a Capital letter and all other words with lowercase. 
 
 ### Links
 * The **[CRnnn-German Case Title](CRnnn-German%20Case%20Title.md)**
+
 * The **[ChangeList](../../_ChangeList.md)**
+
 * [Change Handling **Guidelines**](../../../DEV_GUIDEs/ChangeHandling/_ApplAI_Change%20Handling.md)
+
 * The GENERIC [CHANGE RULES](../../../VSC/client/AI/KIMI/CONFIG/CHANGE_RULES.md) Contex Files with the Rules how all kind or Change Requests shall be handled by the AI. 
 
-<span style="color:red; font-weight:bold">Attention</span>: **Delete this "Intro Section"** in the final AI Prompt! It is just a reminder for documentation purpose but might confuse the AI!
+### Prompting this Change Request
+As everything is defined in
+1. the [CRnnn-German Case Title](CRnnn-German%20Case%20Title.md) named ChangeRequest file and the CHANGE_RULES.md name AI Context file, the Prompt for launching the implementation of the CR remains standardized and minimal as follwos: 
+
+> 1. Read VSC/client/AI/KIMI/CONFIG/CHANGE_RULES.md  
+2. then implement the specific change request in CHANGES/REQUESTS/CR000/CR002-Adding%20a%20TestMode%20Core%20Principle.md.  
+3. Confirm the CR-ID and your intended file impact before writing code."
+
+
+<span style="color:red; font-weight:bold">Attention</span>: **Delete the above "Intro Section"** in the final AI Prompt! It is just a reminder for documentation purpose but might confuse the AI!
 
 ---
 

@@ -28,7 +28,7 @@ No longer relevant, confusing or for other reasons no longer relevant Requests. 
 
 # Appendix
 
-## How to use Change Requests it a prompt
+## How Change Requests are prompted
 
 
 > 1. Read /CHANGE_RULES.md  
