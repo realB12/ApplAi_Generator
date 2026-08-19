@@ -18,18 +18,22 @@
 ---
 
 ## 1. Context & Goal
-For efficiently live end-user testing and maintaining I should be able to switch the App into some kind of TestMode where then certain functionality will be different from Production Mode. This includes: 
+For efficiently live end-user testing and maintaining I should be able to switch the App into some kind of TestMode, where then certain functionality will be different from Production Mode. This includes: 
+
 1. Prefilling input-data with static values (for instance for the Authentication Screen). 
+
 2. Display additional information (such as more detailed error-messages, internal messaging, debug infos, etc. ) 
 
 ## 2. Current State
 Currently the app does not understand TestMode and does not provide any TestFeatures. 
 
-I have draftet a TestMode Implementation concept you must get from my GitHub Repo on https://github.com/realB12/ApplAi_Generator/blob/main/DEV_GUIDES/Architecture/TestMode-Concept.md and read it as a specification for implmenting this change.
+I have draftet a TestMode-Implementation concept you must get from my GitHub Repo on https://github.com/realB12/ApplAi_Generator/blob/main/DEV_GUIDES/Architecture/TestMode-Concept.md and read it as a specification for implmenting this change.
 
 ## 3. Desired State
 Have the [TestMode Concept](https://github.com/realB12/ApplAi_Generator/blob/main/DEV_GUIDES/Architecture/TestMode-Concept.md) fully implemented. 
 
-4. ACTION
+## Action
+-> Find the final Prompt in the PROMPTS Folder ->  
+
 
 
