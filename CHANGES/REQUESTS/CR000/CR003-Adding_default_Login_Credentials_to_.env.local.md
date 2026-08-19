@@ -20,3 +20,11 @@ Do not change anything else.
 -> Find the final Prompt in the PROMPTS Folder -> [16.1 CR003_Adding Default Login Credentials to .env.local](../../../VSC/client/AI/KIMI/PROMPTs/10-19/16.1%20CR003_Adding%20Default%20Login%20Credentials%20to%20.env.local.md)
 
 This prompt was executed August 19th, 2026. 
+
+# CR Confirmation
+* **CR-ID: CR003** — "Adding Default Login Credentials to .env.local" (CR003 file)
+
+* **Goal**: In TestMode, the S001 LoginPopup should prefill email/password from two new .env.local variables (VITE_TEST-USER-MAIL, VITE_TEST-USER-PW) instead of the currently hardcoded fixture values in testFixtures.ts. 
+
+If .env.local or those values can't be loaded, both fields must stay empty and TestMode behavior should fall back to "off" (as if VITE_TESTMODE=no).
+
