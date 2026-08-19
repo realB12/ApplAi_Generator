@@ -1,13 +1,18 @@
 # CR001: Adjusting the Login Screen (S001)
 
 * The **[CRnnn-German Case Title TEMPLATE file](CR-nnn-YYMMDD-German%20Case%20Title.md)**
+
 * The **[ChangeList](../../_ChangeList.md)**
+
 * [Change Handling **Guidelines**](../../../DEV_GUIDEs/ChangeHandling/_ApplAI_Change%20Handling.md)
+
 * The GENERIC [CHANGE RULES](../../../VSC/client/AI/KIMI/CONFIG/CHANGE_RULES.md) Contex Files with the Rules how all kind or Change Requests shall be handled by the AI. 
 
 <span style="color:red; font-weight:bold">Attention</span>: **Delete this "Intro Section"** in the final AI Prompt! It is just a reminder for documentation purpose but might confuse the AI!
 
-* 
+<- [Change 260818](../../../DEV_LOGs/2608/Change_260818.md)
+
+
 ---
 
 ## 1. Context & Goal
