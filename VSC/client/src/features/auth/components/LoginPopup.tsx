@@ -5,7 +5,7 @@
 // `/auth/login` endpoint and returned a custom `{ status, error }` shape on
 // failure. NEW — `login()` calls `supabase.auth.signInWithPassword()`;
 // failures surface as a Supabase `AuthApiError` (`.status`/`.message`).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ import { ScreenBadge } from '@/components/common/ScreenBadge';
 import { PasswordToggle } from './PasswordToggle';
 import { ExitButton } from './ExitButton';
 import { useLogin } from '../hooks/useAuth';
+import { test } from '@/config/testmode';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Please enter a valid email address').max(254),
@@ -39,11 +40,27 @@ export function LoginPopup() {
     handleSubmit,
     setFocus,
     resetField,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '', rememberMe: false },
   });
+
+  // TestMode Design Rule 3 (DEV_GUIDES/Architecture/TestMode-Concept.md):
+  // dynamic import so config/testFixtures.ts is tree-shaken out of production
+  // builds — never imported statically from this (or any prod) code path.
+  useEffect(() => {
+    if (!test.enabled || !test.authPrefill) return;
+    let cancelled = false;
+    void (async () => {
+      const { authPrefill } = await import('@/config/testFixtures');
+      if (!cancelled) reset({ email: authPrefill.email, password: authPrefill.password, rememberMe: false });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reset]);
 
   // SPEC.md §1 / §3.2.3: CAPTCHA required after 3 failed attempts, 15-min lockout after 5.
   const [failedAttempts, setFailedAttempts] = useState(0);

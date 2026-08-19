@@ -3,6 +3,8 @@
 > **Supabase migration pass (2026-08-17):** This revision replaces the GIST-backed MasterResume load/save flow with Supabase Auth (user login) and Supabase Storage (bucket "Applai", folder "SuperCV") for master/generated CV files. See inline "UPDATED 2026-08-17 (Supabase migration)" callouts for each specific change.
 >
 > **Reactive Resume schema-mapping pass (2026-08-17):** This revision replaces the generic, app-invented `MasterCVNode` tree with `SuperCVDocument` — the actual Reactive Resume export schema confirmed against the sample file at `VSC/data/SuperCV/supercv.json`. TVC01 now toggles the schema's own `hidden` fields instead of a separate selection concept; see §5/§5a and DECISIONS.md ADR-018, plus inline "UPDATED 2026-08-17 (Reactive Resume schema mapping)" callouts.
+>
+> **TestMode pass (2026-08-19):** Implements CR002 (`CHANGES/REQUESTS/CR000/CR002-Adding a TestMode Core Principle.md`) per `DEV_GUIDES/Architecture/TestMode-Concept.md` — see DECISIONS.md ADR-019. Adds `config/testmode.ts` (single source of truth for the three-layer flag resolution), `config/testFixtures.ts`, and a top-level `utils/logger.ts`; §2's project structure and §12's environment-variable table are updated below. The Debug Panel UI (Concept Design Rule 5) is intentionally deferred to a follow-up CR.
 
 * -> this document is based on [TECH template](../../../../../../../../../WORK/ENTITY/AI/PROVIDER/K/Kimi/CONFIG/TEMPLATES/TECH_template.md)
 
@@ -68,6 +70,9 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   |   |   ├── providers.tsx      # Context providers composition
 |   |   |   |   ├── router.tsx         # Route definitions
 |   |   |   |   └── store.ts           # Zustand store configuration
+|   |   |   ├─ config/                 # App-wide config, incl. TestMode  <!-- ADDED 2026-08-19 (TestMode, ADR-019) -->
+|   |   |   |   ├── testmode.ts        # TestMode single source of truth (Layer 0/1/2 resolution)
+|   |   |   |   └── testFixtures.ts    # Dynamic-imported-only TestMode fixtures (never static prod import)
 |   |   |   ├─ components/
 |   |   |   |   ├── ui/                # shadcn/ui components (auto-generated)
 |   |   |   |   └── common/            # Shared components (ScreenBadge, MessagePopup, etc.)
@@ -87,6 +92,8 @@ https://github.com/realB12/ApplAi_Generator/tree/main
 |   |   |   |       ├── types/         # SuperCVDocument / Section Registry types (§5, §5a), UserSettings types  <!-- UPDATED 2026-08-17 (Reactive Resume schema mapping): OLD "MasterCV JSON types" -->
 |   |   |   |       └── utils/         # Tree helpers, export helpers
 |   |   |   ├── hooks/                 # Global shared hooks
+|   |   |   ├── utils/                 # Global standalone utilities  <!-- ADDED 2026-08-19 (TestMode, ADR-019) -->
+|   |   |   │   └── logger.ts          # Leveled logger gated by config/testmode.ts's logLevel
 |   |   |   ├── lib/                   # Utilities, helpers
 |   |   |   │   ├── api.ts             # API client setup (Fetch + interceptors + AbortController)
 |   |   |   │   ├── utils.ts           # General utilities (cn, etc.)
@@ -429,12 +436,18 @@ export function abortAllRequests(): void {
 | `VITE_SUPABASE_ANON_KEY` | Yes | Publishable Supabase anon key; safe in client when RLS is configured | `<anon-key>` |
 | `VITE_HCAPTCHA_SITEKEY` | Optional | hCaptcha site key only when Supabase CAPTCHA integration uses hCaptcha | `10000000-ffff-ffff-ffff-000000000001` |
 | `VITE_SENTRY_DSN` | No | Error tracking (optional) | `https://...@sentry.io/...` |
+| `VITE_TESTMODE` | No | TestMode Layer 1 default; structurally ignored outside dev builds (ADR-019, `config/testmode.ts`) | `yes` |
+| `VITE_TEST_LOG_LEVEL` | No | Minimum level emitted by `utils/logger.ts` in TestMode | `debug` |
+| `VITE_TEST_AUTH_PREFILL` | No | Whether S001 prefills from `config/testFixtures.ts` in TestMode | `yes` |
+| `VITE_TEST_DEBUG_PANEL` | No | Reserved for the deferred Debug Panel UI (flag only — no component yet) | `yes` |
 
 **Rule**: Never commit `.env.local`. Use `.env.example` as template. The Supabase **service role** key must never be a `VITE_` variable or otherwise shipped to the client.
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — `VITE_API_URL` and `VITE_DEFAULT_GIST_URL` configured a custom backend and user-configurable GIST. NEW — required `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` configure direct Auth/Storage access to fixed `Applai/SuperCV`.
 
 > **Note:** `VITE_SENTRY_DSN` is optional. If used, add `@sentry/react` to dependencies per BOUNDARIES.md approval process.
+
+> **UPDATED 2026-08-19 (TestMode):** Added `VITE_TESTMODE`/`VITE_TEST_LOG_LEVEL`/`VITE_TEST_AUTH_PREFILL`/`VITE_TEST_DEBUG_PANEL`. All four are structurally inert outside dev builds — `config/testmode.ts`'s Layer 0 gate reads `import.meta.env.DEV`, not these variables, to decide whether TestMode can run at all (ADR-019).
 
 ## 13. Security Configuration
 
@@ -474,6 +487,7 @@ frame-src https://newassets.hcaptcha.com;
 | 2026-08-15 / 2026-08-17 | S002D2 Import Dialog | Explicit SuperCV file selection from fixed `Applai/SuperCV` vs implicit auto-load | Auto-load without user confirmation: error-prone; URL entry removed by ADR-017 |
 | 2026-08-15 / 2026-08-17 | Client-side LOGOUT only (no provider call) | Simplicity + speed. Supabase session expiry is provider-managed; `signOut()` is reserved for an explicit future revocation decision. | Provider logout: adds latency and changes ADR-014's local-clear model |
 | 2026-08-15 | AbortController for all requests | Enables instant cancellation for EXIT/LOGOUT/CANCEL without waiting for pending transactions | Axios cancel tokens: requires extra dependency (Axios is forbidden by BOUNDARIES.md) |
+| 2026-08-19 | Centralized `config/testmode.ts` for TestMode (ADR-019) | CR002 requires TestMode to be structurally impossible in production and never scattered across the codebase; a single module with a hard `import.meta.env.DEV` gate satisfies both | Per-call-site `if (import.meta.env.VITE_TESTMODE)` checks: rejected — exactly the scattering the Concept doc (DEV_GUIDES/Architecture/TestMode-Concept.md) warns against |
 
 ---
 
