@@ -175,12 +175,11 @@ Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
 | Password Toggle | `s001-toggle-password` | Button | `aria-label="Show password"` | Icon: Eye (show) / EyeOff (hide). Toggles input `type`. |
 | Password Error | `s001-password-error` | Span | Inline error text | Hidden by default. Shows: *"Password must be at least 12 characters."* |
 | Remember Me | `s001-remember` | Checkbox | Label: "Remember me on this device" | Default: **unchecked**. Supabase's refresh-token lifetime is a project-wide GoTrue setting, not a per-login parameter — checking this box does **not** extend it. Instead it selects the client storage adapter (ADR-009 amendment): checked persists the session in `sessionStorage` (survives reload, cleared when the browser tab/window closes); unchecked keeps the in-memory-only adapter (cleared on any reload). |
-| Sign In Button | `s001-submit` | Button | "Sign In" | Primary style. Disabled state during API call. Shows spinner inside button during loading. |
-| [Login] Button | `s001-login` | Button | "Login" | Default Button with default [OK] behavor that starts Authentication and either navigates to the MainScreen (S002) or comes back with an ErrorMessage.  |
+| [Sign In] Button | `s001-submit` | Button | "Sign In" | Primary style. Disabled state during API call. Shows spinner inside button during loading. Either navigates to the MainScreen (S002) or comes back with an ErrorMessage.  ||
 | [EXIT] Button | `s001-exit` | Button | "EXIT" | Secondary style. Closes the entire application after confirmation. No pending transactions are waited for. |
-| [CLOSE] Button | `s001-close` | Button | "CLOSE" | Secondary style. Closes the Authenticatoin Pupup and returns to the Welcome screen (S001) |
-| [X] | `s001-close` | Button | "X" | Secondary style. triggers `s001-close` |
-| Forgot Password | `s001-forgot` | Link | "Forgot password?" | Text link, accent color. Opens password reset flow (SMSG info: *"Check your email for reset instructions."*) |
+| [CANCEL] Button | `s001-cancel` | Button | "CANCEL" | Secondary style. Closes the Authenticatoin Pupup and returns to the Welcome screen (S001) |
+| [X] | `s001-close` | Button | "X" | Secondary style. triggers `s001-cancel` |
+| [Forgot Password] | `s001-forgot` | Link | "Forgot password?" | Text link, accent color. Opens password reset flow (SMSG info: *"Check your email for reset instructions."*) |
 | CAPTCHA Container | `s001-captcha` | Div | — | Invisible until triggered by rate limit. |
 
 #### 3.2.3 Interaction & Validation Rules
@@ -218,7 +217,7 @@ Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
 #### 3.3.1 Layout
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ [S002]  Applai Resume Generator    [EXIT] [LOGOUT] [CANCEL] │
+│ [S002]  Applai Resume Generator                         [X] │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  [Load from SuperCV]  [Display All: ●OFF]  [Export]         │
@@ -246,10 +245,10 @@ Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
 |---------|-----|------|-------------|
 | Screen Badge | `s002-badge` | Div | Fixed top-left, text: `S002` |
 | Header Title | `s002-header-title` | Span | "Applai Resume Generator" |
-| Exit Button | `s002-exit` | Button | "EXIT" | Closes the entire application immediately after confirmation. No pending transactions are waited for. Also available in S001. |
-| Logout Button | `s002-logout` | Button | "LOGOUT" | Returns to S000 Welcome Screen / S001 Login Popup after confirmation. Clears JWT from memory. No pending transactions are waited for. User must login again or exit. |
-| Cancel Button | `s002-cancel` | Button | "CANCEL" | Cancels running transactions (stops spinner, aborts in-flight requests) after confirmation. If no transactions are running, resets every section's and item's `hidden` flag in the loaded SuperCV document to `false` and discards any text modifications. |
-| Load from SuperCV Button | `s002-load-supercv` | Button | "Load from SuperCV" | Triggers import flow. If TVC01 already contains data, SMSG `type: warning` prompts: *"Loading a new SuperCV master file will replace current data. Continue?"* — user must confirm before S002D2 opens. |
+| [EXIT] | `s002-exit` | Button | "EXIT" | Application Exit. Closes the entire application immediately after confirmation. No pending transactions are waited for. Also available in the S001 Authentication Screen. |
+| [Logout] | `s002-logout` | Button | "LOGOUT" | Returns to S000 Welcome Screen / S001 Login Popup after confirmation. Clears JWT from memory. No pending transactions are waited for. User must login again or exit. |
+| [CANCEL] Button | `s002-cancel` | Button | "CANCEL" | Cancels running transactions (stops spinner, aborts in-flight requests) after confirmation. If no transactions are running, resets every section's and item's `hidden` flag in the loaded SuperCV document to `false` and discards any text modifications. |
+| [Load from SuperCV] | `s002-load-supercv` | Button | "Load from SuperCV" | Triggers import flow. If TVC01 already contains data, SMSG `type: warning` prompts: *"Loading a new SuperCV master file will replace current data. Continue?"* — user must confirm before S002D2 opens. |
 | Display All Toggle | `s002-display-all` | Toggle Button | "Display All" | OFF by default. When OFF, any section/item whose `hidden` is `true` (and its children) is not shown. When ON, every section/item is shown regardless of its own `hidden` value; checkboxes remain interactive. |
 | Export Button | `s002-export` | Button | "Export" | Opens S002D1 Export Dialogue PopUp. |
 | Settings Button | `s002-settings` | Button | "Settings" | Opens S002S1 Settings Panel PopUp. |
@@ -257,20 +256,26 @@ Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
 
 #### 3.3.3 TVC01 — TreeView Component
 
-**Purpose:** Display the loaded SuperCV document as a schema-aware, collapsible, selectable, editable tree, without assuming a fixed shape — a SuperCV file may contain anything from nothing to every possible section fully populated (TECH.md §5/§5a).
+**Purpose:** Display the loaded SuperCV document as a schema-aware, collapsible, selectable, editable tree, without assuming a fixed shape — a loaded SuperCV file may contain anything from nothing to every possible section fully populated.
 
-> **UPDATED 2026-08-17 (Reactive Resume schema mapping):** OLD — TVC01 rendered a generic, app-invented `MasterCVNode[]` tree with its own `selected`/`expanded` flags. NEW — TVC01 renders the *actual* SuperCV document directly. Every Reactive Resume section wrapper (`sections.<key>`) and every item inside it already carries its own `hidden: boolean` (confirmed in the real sample data, e.g. `sections.experience.items[i].hidden`); the checkbox toggles that existing field in place instead of a separate app-invented selection flag. See TECH.md §5/§5a and DECISIONS.md ADR-018.
+TVC01 renders the *actual* SuperCV document directly. 
+Every Reactive Resume section wrapper (`sections.<key>`) and every item inside it already carries its own `hidden: boolean` field that checkbox-toggles the field in place.
 
 **Node granularity (only two checkable levels — matches what Reactive Resume itself can express):**
+
 - **Topic row** (one per key present in `sections`, plus one per entry in `customSections`): checkbox bound to `sections.<key>.hidden`.
+
 - **Item row** (one per `sections.<key>.items[i]`): checkbox bound to that item's own `hidden`.
+
 - **Field detail** (an item's own fields, e.g. `description`, `keywords`, `roles`, `website`): shown only when the item row is expanded, editable in place, but **never independently checkable** — Reactive Resume has no field-level `hidden` flag to back a checkbox at that depth. This is the maximum depth TVC01 needs to support.
 - **Not part of the tree at all:** `basics`, `picture`, and `metadata`. None of these carry a `hidden` flag in the schema, so there is nothing sensible to select/deselect — they are always shown read-only (or not shown) and always carried through unchanged on export.
 
 **Behavior:**
 - **Selection:** Checked = `hidden: false`, unchecked = `hidden: true`, mutated directly on the live document at the row's exact path (e.g. `sections.experience.items[2].hidden`). There is no separate, out-of-band selection store to keep in sync.
 - **Collapse/Expand:** Double-clicking a Topic or Item row toggles its expand state. Expand/collapse has no Reactive Resume equivalent, so it lives only in client-side `expandedPaths` state (TECH.md §8) — it is never written into the document and never affects export.
+
 - **Display:** When `s002-display-all` is OFF, rows whose `hidden` is `true` (and their children) are hidden from view. When ON, all rows are visible regardless of `hidden`.
+
 - **Editing:** Expanding an Item row reveals its own content fields (chosen by the Section Registry for known topics, or a generic fallback for unknown/custom ones — TECH.md §5a) as editable inputs bound directly to that item's path in the live document.
 - **Row labelling:** A Topic row's label is the Section Registry's `displayName` (or a title-cased fallback of the raw key for unknown/custom sections). An Item row's label concatenates the registry's `titleFields` for that topic (e.g. Experience → `position, company, period`); if a listed field is absent on a given item, it is simply skipped rather than showing an error.
 - **Visual Structure:** Tree indentation indicates hierarchy (Topic → Item). `hidden` state persists per section/item exactly as loaded/edited, directly in the document.
@@ -317,7 +322,7 @@ Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
 
 **Purpose:** Collect filename for exported CV JSON.
 
-**Container:** Modal popup consistent with SMSG design system (same overlay, card styling, shadows, animations).
+**Container:** Modal popup consistent with [SMSG design system] (same overlay, card styling, shadows, animations).
 
 #### 3.4.1 Layout
 ```
@@ -493,9 +498,12 @@ Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
 
 ---
 
-### 3.7 SMSG — Message PopUp
+### 3.7 SMSG — Standard Message PopUp
 
 **Purpose:** Universal feedback component for errors, warnings, success, and info messages.
+Fully passive. No side effects. The only button is the [OK] button which behaves like a normal [CLOSE] button: Just closing the PopUp and giving back the control to the underlying parent screen. 
+
+This SMSG specification Complies with NAVIGATION.md provided rules for Standard Message Popup (SMSG).  
 
 #### 3.7.1 Layout
 ```
@@ -564,7 +572,7 @@ showMessage(params: ShowMessageParams): void;
 
 ### 3.8 S002S1 — Settings Panel PopUp
 
-**Purpose:** Allow authenticated users to manage two personal preferences: preferred SuperCV filename and preferred GeneratedCV base name. The Storage location is always fixed at `Applai/SuperCV`, so no `gistUrl` or other URL setting exists. Settings are persisted through the approved RLS-scoped user-settings mechanism and pre-fill S002D1/S002D2.
+**Purpose:** Allow authenticated users to manage their personal preferences such as preferred SuperCV filename and preferred GeneratedCV base name. The Storage location is always fixed at `Applai/SuperCV`, so no `gistUrl` or other URL setting exists. Settings are persisted through the approved RLS-scoped user-settings mechanism and pre-fill S002D1/S002D2.
 
 **Container:** Modal popup consistent with SMSG design system (same overlay, card styling, shadows, animations).
 
@@ -596,8 +604,8 @@ showMessage(params: ShowMessageParams): void;
 | CV Name Label | `s002s1-cvname-label` | Label | "Preferred CV Export Name" | — |
 | CV Name Input | `s002s1-cvname` | Text | `placeholder="GeneratedCV"` | Optional. Max 23 chars. Regex: `^[a-zA-Z0-9_-]{3,23}$`. Only letters, numbers, hyphens, and underscores allowed. |
 | CV Name Error | `s002s1-cvname-error` | Span | Inline error | Hidden by default. Shows: *"Name must be 3–23 characters. Only letters, numbers, hyphens, and underscores allowed."* |
-| Cancel Button | `s002s1-cancel` | Button | "Cancel" | Secondary style. Closes popup immediately. Discards unsaved changes. |
-| Save Button | `s002s1-save` | Button | "Save" | Primary style. Disabled until at least one field is modified and all fields are valid. Shows spinner during persistence. |
+| [CANCEL] | `s002s1-cancel` | Button | "Cancel" | Secondary style. Closes popup immediately. Discards unsaved changes. |
+| [SAVE] | `s002s1-save` | Button | "Save" | Primary style. Disabled until at least one field is modified and all fields are valid. Shows spinner during persistence. |
 
 #### 3.8.3 Behavior
 
