@@ -1,6 +1,6 @@
 # 17 CR004_Add-a-close-button-to-Confirmation-Panel
 
--> implements [CR004 CLOSE Button on MSG Popup](../../../../../../CHANGES/REQUESTS/CR000/CR004-CLOSE-Button-on-MSG-Popup.md)
+-> implements [CR004 Cancel Function on MSG Popups](../../../../../../CHANGES/REQUESTS/CR000/CR004-Cancel-Function-on-MSG-Popups.md)
 
 ## Context
 Enhance the Settings of my Applai_Generator App.

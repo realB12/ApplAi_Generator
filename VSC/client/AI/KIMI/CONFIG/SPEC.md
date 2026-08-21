@@ -76,16 +76,16 @@
 ┌─────────────────────────────────────────┐
 │ [S000]                                  │
 │                                         │
-│         ┌─────────────────────┐         │
-│         │   [App Logo]        │         │
-│         │   Applai Resume     │         │
-│         │   Generator         │         │
-│         │                     │         │
-│         │   Welcome message   │         │
-│         │   ───────────────── │         │
-│         │   [S001 Login Popup │         │
-│         │    OR spinner]      │         │
-│         └─────────────────────┘         │
+│         ┌──────────────────────┐        │
+│         │   [App Logo]         │        │
+│         │   Applai Resume      │        │
+│         │   Generator          │        │
+│         │                      │        │
+│         │   Welcome message    │        │
+│         │   ─────────────────  │        │
+│         │       [Spinner │     │        │
+│         │   [S001 Login Popup] │        │
+│         └──────────────────────┘        │
 │                                         │
 │         [Footer links]                  │
 └─────────────────────────────────────────┘
@@ -129,10 +129,12 @@
 
 **Container:** Centered modal card inside S000. Overlay: `rgba(15, 23, 42, 0.4)` with `backdrop-filter: blur(4px)`.
 
+Must comply with [NAVIGATION.md](NAVIGATION.md) context file.
+
 #### 3.2.1 Layout
 ```
 ┌─────────────────────────────────────────┐
-│ [S000]                                  │
+│ [S000]                              [X] │
 │                                         │
 │    ┌───────────────────────────────┐    │
 │    │         [S001]                │    │
@@ -174,7 +176,10 @@
 | Password Error | `s001-password-error` | Span | Inline error text | Hidden by default. Shows: *"Password must be at least 12 characters."* |
 | Remember Me | `s001-remember` | Checkbox | Label: "Remember me on this device" | Default: **unchecked**. Supabase's refresh-token lifetime is a project-wide GoTrue setting, not a per-login parameter — checking this box does **not** extend it. Instead it selects the client storage adapter (ADR-009 amendment): checked persists the session in `sessionStorage` (survives reload, cleared when the browser tab/window closes); unchecked keeps the in-memory-only adapter (cleared on any reload). |
 | Sign In Button | `s001-submit` | Button | "Sign In" | Primary style. Disabled state during API call. Shows spinner inside button during loading. |
-| Exit Button | `s001-exit` | Button | "EXIT" | Secondary style. Closes the entire application after confirmation. No pending transactions are waited for. |
+| [Login] Button | `s001-login` | Button | "Login" | Default Button with default [OK] behavor that starts Authentication and either navigates to the MainScreen (S002) or comes back with an ErrorMessage.  |
+| [EXIT] Button | `s001-exit` | Button | "EXIT" | Secondary style. Closes the entire application after confirmation. No pending transactions are waited for. |
+| [CLOSE] Button | `s001-close` | Button | "CLOSE" | Secondary style. Closes the Authenticatoin Pupup and returns to the Welcome screen (S001) |
+| [X] | `s001-close` | Button | "X" | Secondary style. triggers `s001-close` |
 | Forgot Password | `s001-forgot` | Link | "Forgot password?" | Text link, accent color. Opens password reset flow (SMSG info: *"Check your email for reset instructions."*) |
 | CAPTCHA Container | `s001-captcha` | Div | — | Invisible until triggered by rate limit. |
 
@@ -190,8 +195,10 @@
 | **Login Failure (Supabase rate limit, 429)** | Show SMSG `type: warning`, message: *"Too many attempts. Please try again in 15 minutes."* Disable form for 15 min. |
 | **Login Failure (Supabase/network 5xx)** | Show SMSG `type: error`, message: *"Something went wrong. Please try again."* |
 | **Enter Key** | Triggers form submit from any input. |
-| **Escape Key** | Does nothing (modal is not dismissible; login is mandatory). |
-| **EXIT Click** | Show SMSG `type: warning`, persistent: *"Are you sure you want to exit?"* — on confirm, close the application immediately (`window.close()` or navigate to `about:blank`). No pending transactions are waited for. On cancel, return to S001. |
+| **[CANCEL]** | Immediately return to S001. Ignore pending authentication transactions. Clean memory, delete state and session, free resouces. |
+| **Escape Key** | Maps to [CANCEL] |
+|[X] | Maps to [CANCEL] |
+| **EXIT Click** | Show SMSG `type: warning`, persistent: *"Are you sure you want to exit?"* — on confirm, close the application immediately (`window.close()` or navigate to `about:blank`). No pending transactions are waited for. On [CANCEL], return to S001. |
 
 > **UPDATED 2026-08-17 (Supabase migration):** OLD — login POSTed to `/api/auth/login` and the app/server created the JWT/cookie. NEW — S001 calls `supabase.auth.signInWithPassword`; map `AuthApiError.status` and `message` to existing user feedback, while Supabase enforces rate limits and optional CAPTCHA.
 
